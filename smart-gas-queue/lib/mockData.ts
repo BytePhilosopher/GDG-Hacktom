@@ -1,0 +1,141 @@
+import { Station, Queue } from '@/types';
+
+export const MOCK_STATIONS: Station[] = [
+  {
+    id: '1',
+    name: 'Total Station - Bole',
+    location: {
+      lat: 8.9806,
+      lng: 38.7578,
+      address: 'Bole Road, Addis Ababa',
+    },
+    workingHours: 'Open 24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800&auto=format&fit=crop',
+    fuels: [
+      { type: 'Benzene', available: true, remainingQuantity: 3000, pricePerLiter: 120 },
+      { type: 'Diesel', available: true, remainingQuantity: 2500, pricePerLiter: 115 },
+    ],
+    distance: 1.2,
+  },
+  {
+    id: '2',
+    name: 'NOC Station - Kazanchis',
+    location: {
+      lat: 9.0105,
+      lng: 38.7614,
+      address: 'Kazanchis, Addis Ababa',
+    },
+    workingHours: 'Open 6AM - 10PM',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
+    fuels: [
+      { type: 'Benzene', available: true, remainingQuantity: 1500, pricePerLiter: 118 },
+      { type: 'Diesel', available: false, remainingQuantity: 0, pricePerLiter: 113 },
+      { type: 'Kerosene', available: true, remainingQuantity: 800, pricePerLiter: 95 },
+    ],
+    distance: 2.8,
+  },
+  {
+    id: '3',
+    name: 'Oilibya - Megenagna',
+    location: {
+      lat: 9.0272,
+      lng: 38.7894,
+      address: 'Megenagna, Addis Ababa',
+    },
+    workingHours: 'Open 24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&auto=format&fit=crop',
+    fuels: [
+      { type: 'Benzene', available: true, remainingQuantity: 4000, pricePerLiter: 122 },
+      { type: 'Diesel', available: true, remainingQuantity: 3200, pricePerLiter: 116 },
+    ],
+    distance: 4.1,
+  },
+  {
+    id: '4',
+    name: 'Total Station - Piassa',
+    location: {
+      lat: 9.0348,
+      lng: 38.7469,
+      address: 'Piassa, Addis Ababa',
+    },
+    workingHours: 'Open 5AM - 11PM',
+    imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800&auto=format&fit=crop',
+    fuels: [
+      { type: 'Benzene', available: false, remainingQuantity: 0, pricePerLiter: 120 },
+      { type: 'Diesel', available: true, remainingQuantity: 1800, pricePerLiter: 115 },
+      { type: 'Kerosene', available: true, remainingQuantity: 600, pricePerLiter: 95 },
+    ],
+    distance: 5.3,
+  },
+  {
+    id: '5',
+    name: 'Kobil Station - CMC',
+    location: {
+      lat: 9.0456,
+      lng: 38.8012,
+      address: 'CMC Road, Addis Ababa',
+    },
+    workingHours: 'Open 24/7',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop',
+    fuels: [
+      { type: 'Benzene', available: true, remainingQuantity: 2200, pricePerLiter: 121 },
+      { type: 'Diesel', available: true, remainingQuantity: 1900, pricePerLiter: 114 },
+    ],
+    distance: 6.7,
+  },
+];
+
+export const MOCK_QUEUE_HISTORY: Queue[] = [
+  {
+    id: 'q-12345',
+    driverId: 'user-1',
+    stationId: '1',
+    stationName: 'Total Station - Bole',
+    fuelType: 'Benzene',
+    liters: 30,
+    totalPrice: 3600,
+    advancePayment: 900,
+    paidAmount: 900,
+    position: 1,
+    estimatedWait: 0,
+    status: 'completed',
+    paymentStatus: 'paid',
+    createdAt: new Date('2026-05-10'),
+    updatedAt: new Date('2026-05-10'),
+  },
+  {
+    id: 'q-12344',
+    driverId: 'user-1',
+    stationId: '2',
+    stationName: 'NOC Station - Kazanchis',
+    fuelType: 'Diesel',
+    liters: 40,
+    totalPrice: 4600,
+    advancePayment: 1150,
+    paidAmount: 1150,
+    position: 1,
+    estimatedWait: 0,
+    status: 'completed',
+    paymentStatus: 'paid',
+    createdAt: new Date('2026-05-08'),
+    updatedAt: new Date('2026-05-08'),
+  },
+];
+
+export const MOCK_ACTIVE_QUEUE: Queue = {
+  id: 'q-12346',
+  driverId: 'user-1',
+  stationId: '1',
+  stationName: 'Total Station - Bole',
+  fuelType: 'Benzene',
+  liters: 25,
+  totalPrice: 3000,
+  advancePayment: 750,
+  paidAmount: 750,
+  position: 8,
+  estimatedWait: 20,
+  status: 'active',
+  paymentStatus: 'paid',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
