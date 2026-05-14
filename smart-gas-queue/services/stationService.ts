@@ -1,114 +1,112 @@
-import { Station } from '@/types';
-import { calculateDistance } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
+import { Station, Fuel } from '@/types';
 
-// ─── Mock Station Data ────────────────────────────────────────────────────────
-// Swap getters with real API calls when backend is ready:
-//   const { data } = await api.get<Station[]>('/stations/nearby', { params: { lat, lng, radius } });
+const supabase = createClient();
 
-const MOCK_STATIONS: Station[] = [
-  {
-    id: 'station-1',
-    name: 'Total Station — Bole',
-    location: { lat: 9.0105, lng: 38.7636, address: 'Bole, Addis Ababa' },
-    workingHours: 'Open 24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800',
-    fuels: [
-      { type: 'Benzene',  available: true,  remainingQuantity: 2400, pricePerLiter: 52.66 },
-      { type: 'Diesel',   available: true,  remainingQuantity: 800,  pricePerLiter: 49.50 },
-      { type: 'Kerosene', available: true,  remainingQuantity: 100,  pricePerLiter: 38.00 },
-    ],
-    queueSize: 8,
-  },
-  {
-    id: 'station-2',
-    name: 'NOC Station — Kazanchis',
-    location: { lat: 9.0227, lng: 38.7614, address: 'Kazanchis, Addis Ababa' },
-    workingHours: 'Mon–Sat 6am–10pm',
-    imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800',
-    fuels: [
-      { type: 'Benzene',  available: true,  remainingQuantity: 1500, pricePerLiter: 52.66 },
-      { type: 'Diesel',   available: false, remainingQuantity: 0,    pricePerLiter: 49.50 },
-      { type: 'Kerosene', available: true,  remainingQuantity: 800,  pricePerLiter: 38.00 },
-    ],
-    queueSize: 12,
-  },
-  {
-    id: 'station-3',
-    name: 'Oilibya — Megenagna',
-    location: { lat: 9.0348, lng: 38.7714, address: 'Megenagna, Addis Ababa' },
-    workingHours: 'Open 24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-    fuels: [
-      { type: 'Benzene', available: true, remainingQuantity: 4000, pricePerLiter: 52.66 },
-      { type: 'Diesel',  available: true, remainingQuantity: 3500, pricePerLiter: 49.50 },
-    ],
-    queueSize: 3,
-  },
-  {
-    id: 'station-4',
-    name: 'Total Station — Piassa',
-    location: { lat: 9.0348, lng: 38.7469, address: 'Piassa, Addis Ababa' },
-    workingHours: 'Open 5am–11pm',
-    imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800',
-    fuels: [
-      { type: 'Benzene',  available: false, remainingQuantity: 0,    pricePerLiter: 52.66 },
-      { type: 'Diesel',   available: true,  remainingQuantity: 1800, pricePerLiter: 49.50 },
-      { type: 'Kerosene', available: true,  remainingQuantity: 600,  pricePerLiter: 38.00 },
-    ],
-    queueSize: 5,
-  },
-  {
-    id: 'station-5',
-    name: 'Kobil — CMC Road',
-    location: { lat: 9.0456, lng: 38.8012, address: 'CMC Road, Addis Ababa' },
-    workingHours: 'Open 24/7',
-    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-    fuels: [
-      { type: 'Benzene', available: true, remainingQuantity: 2200, pricePerLiter: 52.66 },
-      { type: 'Diesel',  available: true, remainingQuantity: 1900, pricePerLiter: 49.50 },
-    ],
-    queueSize: 2,
-  },
-];
+// ─── Shape helpers ────────────────────────────────────────────────────────────
+
+interface RawFuel {
+  fuel_type:       string;
+  available:       boolean;
+  stock_liters:    number;
+  price_per_liter: number;
+}
+
+interface RawStation {
+  id:            string;
+  name:          string;
+  address:       string;
+  lat:           number;
+  lng:           number;
+  working_hours: string | null;
+  image_url:     string | null;
+  is_active:     boolean;
+  station_fuels?: RawFuel[];
+  distance_meters?: number;
+}
+
+function toStation(raw: RawStation, distanceKm?: number): Station {
+  const fuels: Fuel[] = (raw.station_fuels ?? []).map((f) => ({
+    type:              f.fuel_type as Fuel['type'],
+    available:         f.available,
+    remainingQuantity: f.stock_liters,
+    pricePerLiter:     f.price_per_liter,
+  }));
+
+  return {
+    id:           raw.id,
+    name:         raw.name,
+    location:     { lat: raw.lat, lng: raw.lng, address: raw.address },
+    workingHours: raw.working_hours ?? '',
+    imageUrl:     raw.image_url ?? '',
+    fuels,
+    distance:     distanceKm,
+  };
+}
 
 // ─── Station Service ──────────────────────────────────────────────────────────
 
 class StationService {
   /**
    * Get stations within radius (meters) of a coordinate, sorted by distance.
-   * Future: GET /api/stations/nearby?lat=&lng=&radius=
+   * Uses the get_nearby_stations PostGIS RPC function.
    */
   async getNearbyStations(lat: number, lng: number, radius = 10000): Promise<Station[]> {
-    await new Promise((r) => setTimeout(r, 300));
+    const { data, error } = await supabase.rpc('get_nearby_stations', {
+      user_lat:      lat,
+      user_lng:      lng,
+      radius_meters: radius,
+    });
 
-    return MOCK_STATIONS
-      .map((s) => ({
-        ...s,
-        distance: calculateDistance(lat, lng, s.location.lat, s.location.lng),
-      }))
-      .filter((s) => s.distance! * 1000 <= radius)
-      .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+    if (error) throw new Error(error.message);
+
+    // Fetch fuels for each station
+    const stationIds = (data as RawStation[]).map((s) => s.id);
+    const { data: fuels } = await supabase
+      .from('station_fuels')
+      .select('*')
+      .in('station_id', stationIds);
+
+    const fuelsByStation: Record<string, RawFuel[]> = {};
+    for (const f of fuels ?? []) {
+      if (!fuelsByStation[f.station_id]) fuelsByStation[f.station_id] = [];
+      fuelsByStation[f.station_id].push(f);
+    }
+
+    return (data as (RawStation & { distance_meters: number })[]).map((s) =>
+      toStation(
+        { ...s, station_fuels: fuelsByStation[s.id] ?? [] },
+        s.distance_meters / 1000
+      )
+    );
   }
 
   /**
-   * Get a single station by ID.
-   * Future: GET /api/stations/:id
+   * Get a single station by ID with its fuels.
    */
   async getStationById(id: string): Promise<Station> {
-    await new Promise((r) => setTimeout(r, 200));
+    const { data, error } = await supabase
+      .from('stations')
+      .select('*, station_fuels(*)')
+      .eq('id', id)
+      .single();
 
-    const station = MOCK_STATIONS.find((s) => s.id === id);
-    if (!station) throw new Error(`Station "${id}" not found`);
-    return { ...station };
+    if (error || !data) throw new Error(`Station "${id}" not found`);
+    return toStation(data as RawStation);
   }
 
   /**
-   * Get all stations (for admin or search).
-   * Future: GET /api/stations
+   * Get all active stations.
    */
   async getAllStations(): Promise<Station[]> {
-    await new Promise((r) => setTimeout(r, 200));
-    return [...MOCK_STATIONS];
+    const { data, error } = await supabase
+      .from('stations')
+      .select('*, station_fuels(*)')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) throw new Error(error.message);
+    return (data as RawStation[]).map((s) => toStation(s));
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,12 +16,19 @@ import { queueService } from '@/services/queueService';
 import { paymentService } from '@/services/paymentService';
 import Link from 'next/link';
 
-export default function QueuePositionPage({ params }: { params: { queueId: string } }) {
+export default function QueuePositionPage({ params }: { params: Promise<{ queueId: string }> }) {
   return (
     <ProtectedRoute>
-      <QueuePositionContent queueId={params.queueId} />
+      <Suspense fallback={<LoadingSpinner fullScreen text="Loading…" />}>
+        <QueuePositionPageInner params={params} />
+      </Suspense>
     </ProtectedRoute>
   );
+}
+
+function QueuePositionPageInner({ params }: { params: Promise<{ queueId: string }> }) {
+  const resolvedParams = React.use(params);
+  return <QueuePositionContent queueId={resolvedParams.queueId} />;
 }
 
 type VerifyState = 'idle' | 'verifying' | 'success' | 'failed';

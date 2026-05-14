@@ -1,27 +1,19 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { adminService } from '@/services/adminService';
-import { QueueEntry } from '@/types/admin';
+import { useAdminQueueRealtime } from '@/hooks/useAdminQueueRealtime';
+import { useAuth } from '@/contexts/AuthContext';
 import { QueueTable } from '@/components/admin/QueueTable';
 
 type FuelFilter = 'All' | 'Benzene' | 'Diesel' | 'Kerosene';
 
 export default function AdminQueuePage() {
-  const [queue, setQueue] = useState<QueueEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user }                    = useAuth();
+  const { queue, setQueue, isLive } = useAdminQueueRealtime(user?.stationId);
   const [fuelFilter, setFuelFilter] = useState<FuelFilter>('All');
-  const [search, setSearch] = useState('');
-  // Mock socket connection state — swap with real socket.io later
-  const [isLive] = useState(true);
-
-  useEffect(() => {
-    adminService.getQueue().then((q) => {
-      setQueue(q);
-      setLoading(false);
-    });
-  }, []);
+  const [search, setSearch]         = useState('');
 
   // ─── Queue Actions (optimistic UI) ───────────────────────────────────────
 
@@ -30,7 +22,7 @@ export default function AdminQueuePage() {
       prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, position: i + 1 }))
     );
     await adminService.completeDriver(id);
-  }, []);
+  }, [setQueue]);
 
   const handleSkip = useCallback(async (id: string) => {
     setQueue((prev) => {
@@ -40,14 +32,14 @@ export default function AdminQueuePage() {
       return [...rest, entry].map((e, i) => ({ ...e, position: i + 1 }));
     });
     await adminService.skipDriver(id);
-  }, []);
+  }, [setQueue]);
 
   const handleRemove = useCallback(async (id: string) => {
     setQueue((prev) =>
       prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, position: i + 1 }))
     );
     await adminService.removeDriver(id);
-  }, []);
+  }, [setQueue]);
 
   // ─── Filtering ────────────────────────────────────────────────────────────
 
@@ -60,14 +52,6 @@ export default function AdminQueuePage() {
       e.plateNumber.toLowerCase().includes(q);
     return matchesFuel && matchesSearch;
   });
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-5">

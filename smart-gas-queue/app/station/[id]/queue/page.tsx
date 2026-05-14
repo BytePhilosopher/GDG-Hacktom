@@ -85,8 +85,9 @@ function QueuePageContent({ stationId }: { stationId: string }) {
 
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-        'Payment could not be processed. Please try again or use a different payment method.';
+        err instanceof Error
+          ? err.message
+          : 'Payment could not be processed. Please try again or use a different payment method.';
       toast.error(msg, { duration: 6000 });
       setSubmitting(false);
     }

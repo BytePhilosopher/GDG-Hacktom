@@ -40,7 +40,7 @@ api.interceptors.request.use(
       const path = `${config.baseURL ?? ''}${config.url ?? ''}`;
       const isCredential = path.includes('/auth/login') || path.includes('/auth/register');
       if (!isCredential) {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('auth_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -65,7 +65,7 @@ api.interceptors.response.use(
       const isCredentialAttempt =
         url.includes('/auth/login') || url.includes('/auth/register');
       if (!isCredentialAttempt && hadAuthHeader) {
-        localStorage.removeItem('token');
+        localStorage.removeItem('auth_token');
         window.location.href = '/login';
       }
     }

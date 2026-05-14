@@ -1,31 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { users } from '@/lib/store';
-import { signToken } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { adminClient } from '@/lib/supabase/admin';
+import { checkSupabase } from '@/lib/supabase/guard';
 
-type StoredUser = { passwordHash: string; id: string; email: string; fullName: string; phone: string; vehicleInfo: { plateNumber: string; vehicleType: string; licenseNumber: string }; createdAt: string };
-
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
+  const guard = checkSupabase();
+  if (guard) return guard;
   try {
-    const { email, password } = await req.json();
+    const { email, password } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    let found: StoredUser | undefined;
-    for (const u of Array.from(users.values())) {
-      if (u.email === email) { found = u as StoredUser; break; }
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (!found || !(await bcrypt.compare(password, found.passwordHash))) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    // Fetch profile for role + station info
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('role, station_id, full_name, phone')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 500 });
     }
 
-    const token = await signToken({ id: found.id, email: found.email });
-    const { passwordHash: _pw, ...user } = found; // eslint-disable-line @typescript-eslint/no-unused-vars
+    // Fetch vehicle if driver
+    let vehicleInfo = null;
+    if (profile.role === 'driver') {
+      const { data: vehicle } = await adminClient
+        .from('vehicles')
+        .select('plate_number, vehicle_type, license_number')
+        .eq('user_id', data.user.id)
+        .single();
+      if (vehicle) {
+        vehicleInfo = {
+          plateNumber:   vehicle.plate_number,
+          vehicleType:   vehicle.vehicle_type,
+          licenseNumber: vehicle.license_number,
+        };
+      }
+    }
 
-    return NextResponse.json({ token, user });
+    // Fetch station name if admin
+    let stationName: string | undefined;
+    if (profile.role === 'station_admin' && profile.station_id) {
+      const { data: station } = await adminClient
+        .from('stations')
+        .select('name')
+        .eq('id', profile.station_id)
+        .single();
+      stationName = station?.name;
+    }
+
+    const user = {
+      id:          data.user.id,
+      email:       data.user.email!,
+      fullName:    profile.full_name,
+      phone:       profile.phone,
+      role:        profile.role as 'driver' | 'station_admin',
+      stationId:   profile.station_id ?? undefined,
+      stationName: stationName,
+      vehicleInfo: vehicleInfo ?? undefined,
+      createdAt:   data.user.created_at,
+    };
+
+    return NextResponse.json({ user, role: profile.role });
   } catch {
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }

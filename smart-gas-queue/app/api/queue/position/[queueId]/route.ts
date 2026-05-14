@@ -1,33 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
-import { queues } from '@/lib/store';
+import { createClient } from '@/lib/supabase/server';
+import { adminClient } from '@/lib/supabase/admin';
+import { checkSupabase } from '@/lib/supabase/guard';
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { queueId: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ queueId: string }> }
 ) {
-  const user = await getUserFromRequest(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const guard = checkSupabase();
+  if (guard) return guard;
+  try {
+    const { queueId } = await params;
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const queue = queues.get(params.queueId);
-  if (!queue) return NextResponse.json({ error: 'Queue not found' }, { status: 404 });
-  if (queue.driverId !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const { data: queue, error } = await adminClient
+      .from('queues')
+      .select('*, stations(name)')
+      .eq('id', queueId)
+      .single();
+
+    if (error || !queue) {
+      return NextResponse.json({ error: 'Queue not found' }, { status: 404 });
+    }
+    if (queue.driver_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Count total active in this station's queue
+    const { count } = await adminClient
+      .from('queues')
+      .select('id', { count: 'exact', head: true })
+      .eq('station_id', queue.station_id)
+      .in('status', ['pending', 'active', 'serving']);
+
+    return NextResponse.json({
+      id:             queue.id,
+      driverId:       queue.driver_id,
+      stationId:      queue.station_id,
+      stationName:    (queue.stations as { name: string } | null)?.name,
+      fuelType:       queue.fuel_type,
+      liters:         queue.liters,
+      totalPrice:     queue.total_price,
+      advancePayment: queue.advance_payment,
+      paidAmount:     queue.paid_amount,
+      position:       queue.position,
+      estimatedWait:  queue.estimated_wait,
+      totalInQueue:   count ?? 0,
+      status:         queue.status,
+      paymentStatus:  queue.payment_status,
+      createdAt:      queue.created_at,
+      updatedAt:      queue.updated_at,
+    });
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const totalInQueue = Array.from(queues.values()).filter(
-    (q) => q.stationId === queue.stationId && (q.status === 'pending' || q.status === 'active')
-  ).length;
-
-  return NextResponse.json({
-    position:       queue.position,
-    estimatedWait:  queue.estimatedWait,
-    totalInQueue,
-    status:         queue.status,
-    paymentStatus:  queue.paymentStatus,
-    fuelType:       queue.fuelType,
-    liters:         queue.liters,
-    advancePayment: queue.advancePayment,
-    stationName:    queue.stationName,
-  });
 }

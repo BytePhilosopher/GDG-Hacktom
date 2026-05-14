@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Fuel } from 'lucide-react';
 import { LoginForm } from '@/components/auth/LoginForm';
 
@@ -70,7 +70,9 @@ export default function LoginPage() {
             <p className="text-gray-500 mt-1">Sign in to manage your fuel queues</p>
           </div>
 
-          <LoginForm />
+          <Suspense fallback={<div className="h-48 flex items-center justify-center"><div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /></div>}>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>

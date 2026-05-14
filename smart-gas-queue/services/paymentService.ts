@@ -1,27 +1,48 @@
-import api from '@/lib/axios';
 import { ChapaInitResponse, ChapaVerifyResponse } from '@/types';
 
 export interface PaymentInitPayload {
-  stationId:  string;
-  queueId:    string;
-  fuelType:   string;
-  liters:     number;
-  amount:     number;
+  stationId: string;
+  queueId:   string;
+  fuelType:  string;
+  liters:    number;
+  amount:    number;
 }
 
 class PaymentService {
-  /** POST /api/payments/initialize — returns Chapa checkoutUrl + txRef */
+  /**
+   * POST /api/payments/initialize
+   * Uses fetch with credentials so the Supabase session cookie is sent.
+   */
   async initializePayment(payload: PaymentInitPayload): Promise<ChapaInitResponse> {
-    const { data } = await api.post<ChapaInitResponse>('/payments/initialize', payload);
-    return data;
+    const res = await fetch('/api/payments/initialize', {
+      method:      'POST',
+      credentials: 'include',
+      headers:     { 'Content-Type': 'application/json' },
+      body:        JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error ?? `Payment initialization failed (${res.status})`);
+    }
+    return data as ChapaInitResponse;
   }
 
-  /** GET /api/payments/verify/[txRef] — verifies a Chapa transaction */
+  /**
+   * GET /api/payments/verify/:txRef
+   * Uses fetch with credentials so the Supabase session cookie is sent.
+   */
   async verifyPayment(txRef: string): Promise<ChapaVerifyResponse> {
-    const { data } = await api.get<ChapaVerifyResponse>(
-      `/payments/verify/${encodeURIComponent(txRef)}`
+    const res = await fetch(
+      `/api/payments/verify/${encodeURIComponent(txRef)}`,
+      { credentials: 'include' }
     );
-    return data;
+
+    const data = await res.json();
+    if (!res.ok && res.status !== 404) {
+      throw new Error(data.error ?? `Payment verification failed (${res.status})`);
+    }
+    return data as ChapaVerifyResponse;
   }
 }
 

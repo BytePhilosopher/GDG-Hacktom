@@ -28,6 +28,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# scripts (contain operational tooling — not for production deployment)
+/scripts/
+
 # vercel
 .vercel
 

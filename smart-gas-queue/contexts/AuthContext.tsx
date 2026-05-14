@@ -1,11 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { User, LoginCredentials, RegisterInput } from '@/types';
-import { authService } from '@/services/authService';
-
-const TOKEN_KEY = 'auth_token';
-const USER_KEY  = 'auth_user';
 
 interface AuthContextType {
   user: User | null;
@@ -17,65 +14,83 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType>(null!);
 
+const supabase = createClient();
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Restore session on mount ──────────────────────────────────────────────
+  // ── Restore session on mount & listen for auth changes ───────────────────
   useEffect(() => {
-    const token    = localStorage.getItem(TOKEN_KEY);
-    const userJson = localStorage.getItem(USER_KEY);
-
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    // Optimistically restore from cache so the UI doesn't flash
-    if (userJson) {
-      try {
-        setUser(JSON.parse(userJson) as User);
-      } catch {
-        // corrupted — ignore, will re-verify below
+    // Get initial session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchProfile();
+        setUser(profile);
       }
-    }
+      setLoading(false);
+    });
 
-    // Verify the token is still valid
-    authService
-      .verifyToken(token)
-      .then((verified) => {
-        setUser(verified);
-        localStorage.setItem(USER_KEY, JSON.stringify(verified));
-      })
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    // Subscribe to auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const profile = await fetchProfile();
+          setUser(profile);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function fetchProfile(): Promise<User | null> {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) return null;
+      return await res.json() as User;
+    } catch {
+      return null;
+    }
+  }
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
   async function login(credentials: LoginCredentials): Promise<User> {
-    const { user: userData, token } = await authService.login(credentials);
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setUser(userData);
-    return userData;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email:    credentials.email,
+      password: credentials.password,
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error('Login failed');
+
+    // Fetch full profile (role, vehicleInfo, stationName, etc.)
+    const profile = await fetchProfile();
+    if (!profile) throw new Error('Could not load user profile');
+
+    setUser(profile);
+    return profile;
   }
 
   async function register(data: RegisterInput): Promise<void> {
-    const { user: userData, token } = await authService.register(data);
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setUser(userData);
+    const res = await fetch('/api/auth/register', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(data),
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Registration failed');
+
+    // Sign in immediately after registration
+    await login({ email: data.email, password: data.password });
   }
 
   async function logout(): Promise<void> {
-    await authService.logout();
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    await supabase.auth.signOut();
     setUser(null);
   }
 

@@ -1,48 +1,79 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Queue } from '@/types';
-import api from '@/lib/axios';
-import { useSocket } from '@/contexts/SocketContext';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toQueue(raw: any): Queue {
+  return {
+    id:             raw.id,
+    driverId:       raw.driver_id,
+    stationId:      raw.station_id,
+    stationName:    raw.stations?.name,
+    fuelType:       raw.fuel_type,
+    liters:         raw.liters,
+    totalPrice:     raw.total_price,
+    advancePayment: raw.advance_payment,
+    paidAmount:     raw.paid_amount,
+    position:       raw.position,
+    estimatedWait:  raw.estimated_wait,
+    status:         raw.status,
+    paymentStatus:  raw.payment_status,
+    createdAt:      raw.created_at,
+    updatedAt:      raw.updated_at,
+  };
+}
 
 export function useQueuePosition(queueId: string) {
-  const [queue, setQueue]   = useState<Queue | null>(null);
+  const [queue, setQueue]     = useState<Queue | null>(null);
   const [loading, setLoading] = useState(true);
-  const socket = useSocket();
+  const channelRef            = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!queueId) return;
 
-    // Fetch from real API
-    api
-      .get<Queue>(`/queue/position/${queueId}`)
-      .then((res) => {
-        setQueue(res.data as Queue);
-        setLoading(false);
-      })
-      .catch(() => {
+    // Initial fetch
+    supabase
+      .from('queues')
+      .select('*, stations(name)')
+      .eq('id', queueId)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) setQueue(toQueue(data));
         setLoading(false);
       });
 
-    // Simulate position advancing every 15 s (replace with socket events in production)
-    const interval = setInterval(() => {
-      setQueue((prev) => {
-        if (!prev || prev.position <= 1) return prev;
-        return {
-          ...prev,
-          position:      Math.max(1, prev.position - 1),
-          estimatedWait: Math.max(0, prev.estimatedWait - 7),
-        };
-      });
-    }, 15000);
+    // Subscribe to real-time updates on this queue row
+    const channel = supabase
+      .channel(`queue-pos-${queueId}`)
+      .on(
+        'postgres_changes',
+        {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'queues',
+          filter: `id=eq.${queueId}`,
+        },
+        (payload) => {
+          setQueue((prev) =>
+            prev ? { ...prev, ...toQueue({ ...prev, ...payload.new }) } : null
+          );
+        }
+      )
+      .subscribe();
 
-    if (socket) socket.emit('join-queue-room', queueId);
+    channelRef.current = channel;
 
     return () => {
-      clearInterval(interval);
-      if (socket) socket.emit('leave-queue-room', queueId);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [queueId, socket]);
+  }, [queueId]);
 
   return { queue, loading };
 }
