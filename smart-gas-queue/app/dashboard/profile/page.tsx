@@ -70,7 +70,8 @@ function ProfileContent() {
           </CardContent>
         </Card>
 
-        {/* Vehicle info */}
+        {/* Vehicle info — only shown for drivers */}
+        {user.vehicleInfo && (
         <Card>
           <CardContent className="py-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
@@ -95,6 +96,7 @@ function ProfileContent() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Sign out */}
         <Button

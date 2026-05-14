@@ -3,32 +3,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { adminService } from '@/services/adminService';
 import { AdminFuel } from '@/types/admin';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { FuelStatusCard } from '@/components/admin/FuelStatusCard';
 
 export default function AdminFuelPage() {
-  const { adminUser } = useAdminAuth();
   const [fuels, setFuels] = useState<AdminFuel[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!adminUser) return;
-    adminService.getFuels(adminUser.stationId).then((f) => {
+    adminService.getFuels().then((f) => {
       setFuels(f);
       setLoading(false);
     });
-  }, [adminUser]);
+  }, []);
 
-  const handleEdit = useCallback(
-    async (updated: AdminFuel) => {
-      // Optimistic update
-      setFuels((prev) =>
-        prev.map((f) => (f.type === updated.type ? updated : f))
-      );
-      await adminService.updateFuel(adminUser!.stationId, updated.type, updated);
-    },
-    [adminUser]
-  );
+  const handleEdit = useCallback(async (updated: AdminFuel) => {
+    // Optimistic update
+    setFuels((prev) => prev.map((f) => (f.type === updated.type ? updated : f)));
+    await adminService.updateFuel(updated);
+  }, []);
 
   if (loading) {
     return (
@@ -59,21 +51,15 @@ export default function AdminFuelPage() {
         <div className="flex flex-wrap gap-4 text-sm text-gray-600">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span>
-              <strong className="text-gray-900">Available</strong> — above 1,000L
-            </span>
+            <span><strong className="text-gray-900">Available</strong> — above 1,000L</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span>
-              <strong className="text-gray-900">Low Stock</strong> — 300L to 1,000L
-            </span>
+            <span><strong className="text-gray-900">Low Stock</strong> — 300L to 1,000L</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span>
-              <strong className="text-gray-900">Critical</strong> — below 300L
-            </span>
+            <span><strong className="text-gray-900">Critical</strong> — below 300L</span>
           </div>
         </div>
       </div>

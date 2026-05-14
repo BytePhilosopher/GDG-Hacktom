@@ -5,43 +5,35 @@ import Link from 'next/link';
 import { Users, CheckCircle2, Droplets, ArrowRight, Fuel } from 'lucide-react';
 import { adminService } from '@/services/adminService';
 import { QueueEntry, AdminFuel, StationStats } from '@/types/admin';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { StatCard } from '@/components/admin/StatCard';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 
 function getFuelStatus(stockLiters: number) {
-  if (stockLiters > 1000) return { label: 'Available', variant: 'success' as const, dot: 'bg-emerald-500' };
-  if (stockLiters > 300) return { label: 'Low Stock', variant: 'warning' as const, dot: 'bg-amber-500' };
-  return { label: 'Critical', variant: 'error' as const, dot: 'bg-red-500' };
+  if (stockLiters > 1000) return { label: 'Available', dot: 'bg-emerald-500', text: 'text-emerald-700 bg-emerald-50' };
+  if (stockLiters > 300)  return { label: 'Low Stock', dot: 'bg-amber-500',   text: 'text-amber-700 bg-amber-50'   };
+  return                         { label: 'Critical',  dot: 'bg-red-500',     text: 'text-red-700 bg-red-50'       };
 }
 
 export default function AdminDashboardPage() {
-  const { adminUser } = useAdminAuth();
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [fuels, setFuels] = useState<AdminFuel[]>([]);
   const [stats, setStats] = useState<StationStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!adminUser) return;
-    async function load() {
-      try {
-        const [q, f, s] = await Promise.all([
-          adminService.getQueue(adminUser!.stationId),
-          adminService.getFuels(adminUser!.stationId),
-          adminService.getStats(adminUser!.stationId),
-        ]);
-        setQueue(q);
-        setFuels(f);
-        setStats(s);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [adminUser]);
+    Promise.all([
+      adminService.getQueue(),
+      adminService.getFuels(),
+      adminService.getStats(),
+    ]).then(([q, f, s]) => {
+      setQueue(q);
+      setFuels(f);
+      setStats(s);
+      setLoading(false);
+    });
+  }, []);
 
   const previewQueue = queue.slice(0, 5);
 
@@ -120,11 +112,8 @@ export default function AdminDashboardPage() {
                     <td className="px-5 py-3 hidden sm:table-cell">
                       <Badge
                         variant={
-                          entry.fuelType === 'Benzene'
-                            ? 'success'
-                            : entry.fuelType === 'Diesel'
-                            ? 'info'
-                            : 'warning'
+                          entry.fuelType === 'Benzene' ? 'success' :
+                          entry.fuelType === 'Diesel'  ? 'info'    : 'warning'
                         }
                       >
                         {entry.fuelType}
@@ -160,14 +149,7 @@ export default function AdminDashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium text-gray-900">{fuel.type}</span>
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full',
-                          status.variant === 'success' && 'bg-emerald-50 text-emerald-700',
-                          status.variant === 'warning' && 'bg-amber-50 text-amber-700',
-                          status.variant === 'error' && 'bg-red-50 text-red-700'
-                        )}
-                      >
+                      <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full', status.text)}>
                         <span className={cn('w-1.5 h-1.5 rounded-full', status.dot)} />
                         {status.label}
                       </span>

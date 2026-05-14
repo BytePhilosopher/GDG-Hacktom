@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -19,15 +18,15 @@ function formatDate() {
 }
 
 export function AdminHeader() {
-  const { adminUser } = useAdminAuth();
+  const { user } = useAuth();
 
   return (
     <div className="mb-6">
       <h1 className="text-2xl font-bold text-gray-900">
-        {getGreeting()}, {adminUser?.name ?? 'Admin'} 👋
+        {getGreeting()}, {user?.fullName?.split(' ')[0] ?? 'Admin'} 👋
       </h1>
       <p className="text-sm text-gray-500 mt-0.5">
-        {formatDate()} — {adminUser?.stationName ?? 'Station'}
+        {formatDate()} — {user?.stationName ?? 'Station'}
       </p>
     </div>
   );

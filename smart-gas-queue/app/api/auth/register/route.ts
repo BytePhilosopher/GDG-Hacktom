@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
 
     users.set(id, {
       id, fullName, email, phone,
+      role: 'driver' as const,
       vehicleInfo: { plateNumber, vehicleType, licenseNumber },
       createdAt:   now,
       passwordHash,

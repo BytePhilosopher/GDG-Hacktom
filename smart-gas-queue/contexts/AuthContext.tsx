@@ -7,7 +7,7 @@ import { authService } from '@/services/authService';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   register: (data: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -33,10 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function login(credentials: LoginCredentials) {
+  async function login(credentials: LoginCredentials): Promise<User> {
     const { user: userData, token } = await authService.login(credentials);
     localStorage.setItem('token', token);
     setUser(userData);
+    return userData;
   }
 
   async function register(data: RegisterInput) {

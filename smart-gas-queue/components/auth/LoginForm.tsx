@@ -35,8 +35,13 @@ export function LoginForm() {
   const onSubmit = async (data: LoginValues) => {
     setServerError('');
     try {
-      await login(data);
-      router.push('/dashboard');
+      const user = await login(data);
+      // Role-based redirect — admins go to /admin, drivers go to /
+      if (user?.role === 'station_admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     }

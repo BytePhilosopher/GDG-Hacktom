@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { AdminAuthProvider, useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 function AdminLoadingScreen() {
@@ -16,40 +16,33 @@ function AdminLoadingScreen() {
   );
 }
 
-function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { adminUser, loading } = useAdminAuth();
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !adminUser && pathname !== '/admin/login') {
-      router.push('/admin/login');
+    if (loading) return;
+    if (!user) {
+      router.push('/login');        // not logged in → driver login page
+      return;
     }
-  }, [adminUser, loading, pathname, router]);
+    if (user.role !== 'station_admin') {
+      router.push('/');             // logged in as driver → map page
+    }
+  }, [user, loading, router]);
 
-  if (loading) return <AdminLoadingScreen />;
-
-  // Login page renders without the shell
-  if (pathname === '/admin/login') return <>{children}</>;
-
-  if (!adminUser) return null;
+  if (loading || !user || user.role !== 'station_admin') {
+    return <AdminLoadingScreen />;
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <AdminSidebar />
-      <main className="flex-1 overflow-y-auto pt-0 lg:pt-0">
+      <main className="flex-1 overflow-y-auto">
         {/* Spacer for mobile top bar */}
         <div className="h-14 lg:hidden" />
         <div className="p-4 md:p-6 max-w-6xl mx-auto">{children}</div>
       </main>
     </div>
-  );
-}
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AdminAuthProvider>
-      <AdminGuard>{children}</AdminGuard>
-    </AdminAuthProvider>
   );
 }

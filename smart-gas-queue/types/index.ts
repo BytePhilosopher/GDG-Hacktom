@@ -1,11 +1,14 @@
 // ─── Core domain types ────────────────────────────────────────────────────────
 
 export interface User {
-  id:          string;
-  fullName:    string;
-  email:       string;
-  phone:       string;
-  vehicleInfo: {
+  id:           string;
+  fullName:     string;
+  email:        string;
+  phone:        string;
+  role:         'driver' | 'station_admin';
+  stationId?:   string;   // only for station_admin
+  stationName?: string;   // only for station_admin
+  vehicleInfo?: {         // optional — admins have no vehicle
     plateNumber:   string;
     vehicleType:   VehicleType;
     licenseNumber: string;
