@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import { AlertCircle, ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { StationHeader } from '@/components/stations/StationHeader';
@@ -14,10 +16,13 @@ import { queueService } from '@/services/queueService';
 import { paymentService } from '@/services/paymentService';
 import { Station } from '@/types';
 
-export default function QueuePage({ params }: { params: { id: string } }) {
+export default function QueuePage() {
+  const params = useParams();
+  const stationId = typeof params.id === 'string' ? params.id : '';
+
   return (
     <ProtectedRoute>
-      <QueuePageContent stationId={params.id} />
+      <QueuePageContent stationId={stationId} />
     </ProtectedRoute>
   );
 }
@@ -31,6 +36,11 @@ function QueuePageContent({ stationId }: { stationId: string }) {
   const [pageError, setPageError]   = useState('');
 
   useEffect(() => {
+    if (!stationId) {
+      setPageError('Invalid station');
+      setLoading(false);
+      return;
+    }
     stationService
       .getStationById(stationId)
       .then(setStation)
@@ -86,22 +96,52 @@ function QueuePageContent({ stationId }: { stationId: string }) {
 
   if (pageError || !station) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-gray-500">{pageError || 'Station not found'}</p>
-          <button
-            onClick={() => router.push('/')}
-            className="mt-4 text-red-600 font-medium hover:underline"
-          >
-            Back to map
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100">
+        <motion.div
+          className="text-center max-w-sm"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        >
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-600 shadow-inner">
+            <AlertCircle className="h-8 w-8" aria-hidden />
+          </div>
+          <p className="text-slate-700 font-medium">{pageError || 'Station not found'}</p>
+          <p className="text-sm text-slate-500 mt-2">Check the link or pick another station from the map.</p>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <motion.button
+              type="button"
+              onClick={() => router.push('/')}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-red-600/25 hover:bg-red-700 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Home className="h-4 w-4" aria-hidden />
+              Back to map
+            </motion.button>
+            <motion.button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Go back
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-8">
+    <motion.div
+      className="min-h-screen bg-gray-50 pb-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
       <StationHeader station={station} />
       <FuelAvailabilityTable fuels={station.fuels} />
       <FuelRequestForm
@@ -109,6 +149,6 @@ function QueuePageContent({ stationId }: { stationId: string }) {
         onSubmit={handleSubmit}
         isLoading={submitting}
       />
-    </div>
+    </motion.div>
   );
 }

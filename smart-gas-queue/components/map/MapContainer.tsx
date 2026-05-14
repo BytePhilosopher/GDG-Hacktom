@@ -1,8 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
 import { LatLng, Station } from '@/types';
+
+function circleSymbol(scale: number, fillColor: string, strokeColor = '#ffffff') {
+  const gmaps = typeof window !== 'undefined' ? window.google?.maps : undefined;
+  const Path = gmaps?.SymbolPath?.CIRCLE ?? 0;
+  return {
+    path: Path,
+    scale,
+    fillColor,
+    fillOpacity: 1,
+    strokeColor,
+    strokeWeight: 2,
+  };
+}
 
 const MAP_STYLES = [
   { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
@@ -27,6 +40,21 @@ export function MapContainer({
   onStationClick,
 }: MapContainerProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
+
+  const onMapUnmount = useCallback(() => {
+    mapRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo(center);
+  }, [center]);
 
   if (!apiKey) {
     return (
@@ -42,8 +70,14 @@ export function MapContainer({
     <LoadScript
       googleMapsApiKey={apiKey}
       loadingElement={
-        <div className="w-full h-full bg-gradient-to-br from-slate-100 to-blue-50 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-full h-full bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-100 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 rounded-full border-4 border-red-600/25" />
+              <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin" />
+            </div>
+            <p className="text-xs font-medium text-slate-600">Starting maps…</p>
+          </div>
         </div>
       }
     >
@@ -51,6 +85,8 @@ export function MapContainer({
         mapContainerClassName="w-full h-full"
         center={center}
         zoom={zoom}
+        onLoad={onMapLoad}
+        onUnmount={onMapUnmount}
         options={{
           styles: MAP_STYLES,
           disableDefaultUI: true,
@@ -60,17 +96,7 @@ export function MapContainer({
       >
         {userLocation && (
           <>
-            <Marker
-              position={userLocation}
-              icon={{
-                path: 0 /* google.maps.SymbolPath.CIRCLE = 0 */,
-                scale: 8,
-                fillColor: '#3B82F6',
-                fillOpacity: 1,
-                strokeColor: '#ffffff',
-                strokeWeight: 2,
-              }}
-            />
+            <Marker position={userLocation} icon={circleSymbol(8, '#3B82F6')} />
             <Circle
               center={userLocation}
               radius={100}
@@ -90,14 +116,7 @@ export function MapContainer({
             key={station.id}
             position={station.location}
             onClick={() => onStationClick(station)}
-            icon={{
-              path: 3 /* google.maps.SymbolPath.BACKWARD_CLOSED_ARROW = 3 */,
-              scale: 6,
-              fillColor: '#DC2626',
-              fillOpacity: 1,
-              strokeColor: '#ffffff',
-              strokeWeight: 2,
-            }}
+            icon={circleSymbol(9, '#DC2626')}
             title={station.name}
           />
         ))}

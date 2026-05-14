@@ -27,7 +27,16 @@ export async function POST(req: NextRequest) {
     const parsed = schema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
+      const summary = parsed.error.issues
+        .map((i) => {
+          const path = i.path.length ? `${i.path.join('.')}: ` : '';
+          return `${path}${i.message}`;
+        })
+        .join(' ');
+      return NextResponse.json(
+        { error: summary || 'Validation failed', issues: parsed.error.issues },
+        { status: 400 }
+      );
     }
 
     const { fullName, phone, email, plateNumber, vehicleType, licenseNumber, password } =

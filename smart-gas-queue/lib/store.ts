@@ -40,7 +40,7 @@ if (!global.__fuelq_stations) {
       id: 'station-1', name: 'Total Bole',
       location: { lat: 9.0105, lng: 38.7636, address: 'Bole, Addis Ababa' },
       workingHours: 'Open 24/7',
-      imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8b409a7e5?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800',
       fuels: [
         { type: 'Benzene', available: true,  remainingQuantity: 3000, pricePerLiter: 52.66 },
         { type: 'Diesel',  available: true,  remainingQuantity: 2500, pricePerLiter: 49.50 },
@@ -74,7 +74,7 @@ if (!global.__fuelq_stations) {
       id: 'station-4', name: 'Total Piassa',
       location: { lat: 9.0348, lng: 38.7469, address: 'Piassa, Addis Ababa' },
       workingHours: 'Open 5am–11pm',
-      imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8b409a7e5?w=800',
+      imageUrl: 'https://images.unsplash.com/photo-1545262810-a9b8f4c5f5e5?w=800',
       fuels: [
         { type: 'Benzene',  available: false, remainingQuantity: 0,    pricePerLiter: 52.66 },
         { type: 'Diesel',   available: true,  remainingQuantity: 1800, pricePerLiter: 49.50 },
