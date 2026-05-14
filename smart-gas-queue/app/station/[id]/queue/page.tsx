@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { StationHeader } from '@/components/stations/StationHeader';
@@ -13,11 +14,7 @@ import { queueService } from '@/services/queueService';
 import { paymentService } from '@/services/paymentService';
 import { Station } from '@/types';
 
-interface QueuePageProps {
-  params: { id: string };
-}
-
-export default function QueuePage({ params }: QueuePageProps) {
+export default function QueuePage({ params }: { params: { id: string } }) {
   return (
     <ProtectedRoute>
       <QueuePageContent stationId={params.id} />
@@ -28,16 +25,16 @@ export default function QueuePage({ params }: QueuePageProps) {
 function QueuePageContent({ stationId }: { stationId: string }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [station, setStation] = useState<Station | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [station, setStation]       = useState<Station | null>(null);
+  const [loading, setLoading]       = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [pageError, setPageError]   = useState('');
 
   useEffect(() => {
     stationService
       .getStationById(stationId)
       .then(setStation)
-      .catch(() => setError('Station not found'))
+      .catch(() => setPageError('Station not found'))
       .finally(() => setLoading(false));
   }, [stationId]);
 
@@ -51,41 +48,47 @@ function QueuePageContent({ stationId }: { stationId: string }) {
     setSubmitting(true);
 
     try {
-      // First join the queue
+      // 1. Create queue entry in the store
       const queue = await queueService.joinQueue({
-        stationId: station.id,
-        fuelType: data.fuelType,
-        liters: data.liters,
-        totalPrice: data.totalPrice,
+        stationId:      station.id,
+        fuelType:       data.fuelType,
+        liters:         data.liters,
+        totalPrice:     data.totalPrice,
         advancePayment: data.advancePayment,
       });
 
-      // Then initialize payment
+      // 2. Initialize Chapa payment
       const payment = await paymentService.initializePayment({
-        amount: data.advancePayment,
-        email: user.email,
-        firstName: user.fullName.split(' ')[0],
-        lastName: user.fullName.split(' ').slice(1).join(' ') || '',
-        queueId: queue.id,
-        fuelType: data.fuelType,
-        liters: data.liters,
+        stationId: station.id,
+        queueId:   queue.id,
+        fuelType:  data.fuelType,
+        liters:    data.liters,
+        amount:    data.advancePayment,
       });
 
-      // Redirect to Chapa checkout (or queue page in demo)
-      window.location.href = payment.data.checkout_url;
-    } catch {
-      setError('Failed to process your request. Please try again.');
+      // 3. Save for recovery if browser closes
+      sessionStorage.setItem('pending_tx_ref',   payment.txRef);
+      sessionStorage.setItem('pending_queue_id', queue.id);
+
+      // 4. Redirect to Chapa checkout
+      window.location.href = payment.checkoutUrl;
+
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        'Payment could not be processed. Please try again or use a different payment method.';
+      toast.error(msg, { duration: 6000 });
       setSubmitting(false);
     }
   };
 
   if (loading) return <LoadingSpinner fullScreen text="Loading station..." />;
 
-  if (error || !station) {
+  if (pageError || !station) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-gray-500">{error || 'Station not found'}</p>
+          <p className="text-gray-500">{pageError || 'Station not found'}</p>
           <button
             onClick={() => router.push('/')}
             className="mt-4 text-red-600 font-medium hover:underline"

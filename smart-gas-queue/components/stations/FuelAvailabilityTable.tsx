@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { Fuel } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';

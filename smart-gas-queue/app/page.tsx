@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Locate, LogIn } from 'lucide-react';
@@ -10,37 +10,47 @@ import { useAuth } from '@/contexts/AuthContext';
 import { stationService } from '@/services/stationService';
 import { FloatingSearchBar } from '@/components/map/FloatingSearchBar';
 import { StationPopup } from '@/components/stations/StationPopup';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 
-// Dynamically import map to avoid SSR issues
+// Dynamically import map to avoid SSR issues — no full-screen loading fallback
+// so the rest of the UI is always visible
 const MapContainer = dynamic(
   () => import('@/components/map/MapContainer').then((m) => m.MapContainer),
-  { ssr: false, loading: () => <LoadingSpinner fullScreen text="Loading map..." /> }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-gradient-to-br from-slate-100 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading map…</p>
+        </div>
+      </div>
+    ),
+  }
 );
 
 export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { location: userLocation, loading: locationLoading, recenter } = useGeolocation();
+  const { location: userLocation, recenter } = useGeolocation();
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [mapCenter, setMapCenter] = useState({ lat: 9.005401, lng: 38.763611 });
-  const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Load nearby stations when location is available
+  // Update map center and load stations whenever location resolves
   useEffect(() => {
     if (userLocation) {
       setMapCenter(userLocation);
-      stationService.getNearbyStations(userLocation.lat, userLocation.lng).then(setStations);
+      stationService
+        .getNearbyStations(userLocation.lat, userLocation.lng)
+        .then(setStations)
+        .catch(() => {}); // silently ignore — mock data always works
     }
   }, [userLocation]);
 
   const handleRecenter = useCallback(() => {
     recenter();
-    if (userLocation) {
-      setMapCenter(userLocation);
-    }
+    if (userLocation) setMapCenter(userLocation);
   }, [recenter, userLocation]);
 
   const handleJoinQueue = useCallback(
@@ -61,24 +71,20 @@ export default function HomePage() {
 
   return (
     <main className="relative h-screen w-full overflow-hidden" aria-label="Gas station map">
-      {/* Full-screen map */}
+      {/* Full-screen map — always rendered, never blocked by loading state */}
       <div className="absolute inset-0 z-0">
-        {!locationLoading && (
-          <MapContainer
-            center={mapCenter}
-            userLocation={userLocation}
-            stations={stations}
-            onStationClick={setSelectedStation}
-            onMapLoad={(map) => { mapRef.current = map; }}
-          />
-        )}
-        {locationLoading && <LoadingSpinner fullScreen text="Getting your location..." />}
+        <MapContainer
+          center={mapCenter}
+          userLocation={userLocation}
+          stations={stations}
+          onStationClick={setSelectedStation}
+        />
       </div>
 
       {/* Floating search bar */}
       <FloatingSearchBar stations={stations} onStationSelect={handleStationSelect} />
 
-      {/* Top-right profile/auth button */}
+      {/* Top-right profile / sign-in button */}
       <div className="absolute top-4 right-4 z-20">
         {user ? (
           <Link

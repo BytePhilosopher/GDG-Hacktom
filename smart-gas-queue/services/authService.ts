@@ -1,69 +1,25 @@
+import api from '@/lib/axios';
 import { AuthResponse, LoginCredentials, RegisterInput, User } from '@/types';
 
-// Mock auth service - replace with real API calls
-export class AuthService {
+class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    if (credentials.email && credentials.password) {
-      const user: User = {
-        id: 'user-1',
-        fullName: 'John Doe',
-        email: credentials.email,
-        phone: '+251912345678',
-        vehicleInfo: {
-          plateNumber: 'AA-12345',
-          vehicleType: 'sedan',
-          licenseNumber: 'LIC-98765',
-        },
-        createdAt: new Date(),
-      };
-      return { user, token: 'mock-jwt-token-' + Date.now() };
-    }
-    throw new Error('Invalid credentials');
+    const { data } = await api.post<AuthResponse>('/auth/login', credentials);
+    return data;
   }
 
   async register(data: RegisterInput): Promise<AuthResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const user: User = {
-      id: 'user-' + Date.now(),
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      vehicleInfo: {
-        plateNumber: data.plateNumber,
-        vehicleType: data.vehicleType,
-        licenseNumber: data.licenseNumber,
-      },
-      createdAt: new Date(),
-    };
-    return { user, token: 'mock-jwt-token-' + Date.now() };
+    const { data: res } = await api.post<AuthResponse>('/auth/register', data);
+    return res;
   }
 
   async logout(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await api.post('/auth/logout');
   }
 
-  async verifyToken(token: string): Promise<User> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    if (token.startsWith('mock-jwt-token-')) {
-      return {
-        id: 'user-1',
-        fullName: 'John Doe',
-        email: 'john@example.com',
-        phone: '+251912345678',
-        vehicleInfo: {
-          plateNumber: 'AA-12345',
-          vehicleType: 'sedan',
-          licenseNumber: 'LIC-98765',
-        },
-        createdAt: new Date(),
-      };
-    }
-    throw new Error('Invalid token');
+  async verifyToken(_token: string): Promise<User> {
+    // Token is sent via the axios interceptor Authorization header
+    const { data } = await api.get<User>('/auth/me');
+    return data;
   }
 }
 

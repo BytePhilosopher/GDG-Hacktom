@@ -16,25 +16,22 @@ export const AuthContext = createContext<AuthContextType>(null!);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // loading=false by default so pages render immediately.
+  // Only set true while verifying a stored token.
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-  async function checkAuth() {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const userData = await authService.verifyToken(token);
-        setUser(userData);
-      }
-    } catch {
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  }
+    setLoading(true);
+    authService
+      .verifyToken(token)
+      .then((userData) => setUser(userData))
+      .catch(() => localStorage.removeItem('token'))
+      .finally(() => setLoading(false));
+  }, []);
 
   async function login(credentials: LoginCredentials) {
     const { user: userData, token } = await authService.login(credentials);
@@ -62,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

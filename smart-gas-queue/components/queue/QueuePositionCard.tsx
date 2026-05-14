@@ -46,7 +46,7 @@ export function QueuePositionCard({ queue }: QueuePositionCardProps) {
             <DetailRow
               icon={<MapPin className="w-4 h-4 text-red-500" />}
               label="Station"
-              value={queue.stationName}
+              value={queue.stationName ?? 'Unknown Station'}
             />
             <DetailRow
               icon={<span className="text-sm">⛽</span>}

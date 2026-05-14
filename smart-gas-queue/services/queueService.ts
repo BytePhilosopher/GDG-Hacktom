@@ -1,48 +1,33 @@
+import api from '@/lib/axios';
 import { Queue, QueueRequest } from '@/types';
-import { MOCK_ACTIVE_QUEUE, MOCK_QUEUE_HISTORY, MOCK_STATIONS } from '@/lib/mockData';
 
-export class QueueService {
+class QueueService {
   async joinQueue(data: QueueRequest): Promise<Queue> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    const station = MOCK_STATIONS.find((s) => s.id === data.stationId);
-    const queue: Queue = {
-      id: 'q-' + Date.now(),
-      driverId: 'user-1',
+    const { data: res } = await api.post<Queue>('/queue/join', {
       stationId: data.stationId,
-      stationName: station?.name || 'Unknown Station',
-      fuelType: data.fuelType,
-      liters: data.liters,
-      totalPrice: data.totalPrice,
-      advancePayment: data.advancePayment,
-      paidAmount: data.advancePayment,
-      position: Math.floor(Math.random() * 15) + 5,
-      estimatedWait: Math.floor(Math.random() * 40) + 10,
-      status: 'active',
-      paymentStatus: 'paid',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    return queue;
+      fuelType:  data.fuelType,
+      liters:    data.liters,
+    });
+    return res;
   }
 
   async getQueuePosition(queueId: string): Promise<Queue> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return { ...MOCK_ACTIVE_QUEUE, id: queueId };
+    const { data } = await api.get<Queue>(`/queue/position/${queueId}`);
+    return data;
   }
 
   async cancelQueue(queueId: string): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await api.delete(`/queue/cancel/${queueId}`);
   }
 
   async getActiveQueue(): Promise<Queue | null> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return MOCK_ACTIVE_QUEUE;
+    const { data } = await api.get<Queue | null>('/driver/active-queue');
+    return data;
   }
 
   async getHistory(): Promise<Queue[]> {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    return MOCK_QUEUE_HISTORY;
+    const { data } = await api.get<Queue[]>('/driver/history');
+    return data;
   }
 }
 

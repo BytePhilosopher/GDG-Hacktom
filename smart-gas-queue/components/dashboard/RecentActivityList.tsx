@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Queue } from '@/types';
@@ -8,7 +9,7 @@ interface RecentActivityListProps {
   items: Queue[];
 }
 
-const statusConfig = {
+const statusConfig: Record<Queue['status'], { icon: typeof CheckCircle; color: string; bg: string; label: string }> = {
   completed: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50', label: 'Completed' },
   cancelled: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-50', label: 'Cancelled' },
   active: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50', label: 'Active' },

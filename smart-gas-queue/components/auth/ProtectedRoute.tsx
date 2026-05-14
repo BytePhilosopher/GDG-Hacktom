@@ -15,9 +15,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Loading..." />;
-  }
+  if (loading) return <LoadingSpinner fullScreen text="Loading..." />;
+  if (!user) return null; // redirect in flight
 
-  return user ? <>{children}</> : null;
+  return <>{children}</>;
 }
