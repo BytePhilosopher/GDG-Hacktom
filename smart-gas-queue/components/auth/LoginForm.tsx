@@ -5,24 +5,25 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email:    z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const { login } = useAuth();
-  const router = useRouter();
+  const { login }      = useAuth();
+  const router         = useRouter();
+  const searchParams   = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState('');
+  const [serverError,  setServerError]  = useState('');
 
   const {
     register,
@@ -36,14 +37,20 @@ export function LoginForm() {
     setServerError('');
     try {
       const user = await login(data);
-      // Role-based redirect — admins go to /admin, drivers go to /
-      if (user?.role === 'station_admin') {
+
+      // Role-based redirect
+      if (user.role === 'station_admin') {
         router.push('/admin');
-      } else {
-        router.push('/dashboard');
+        return;
       }
+
+      // Driver: honour ?redirect= param (e.g. from join-queue flow), else go to map
+      const redirect = searchParams.get('redirect');
+      router.push(redirect ?? '/');
     } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      setServerError(
+        err instanceof Error ? err.message : 'Login failed. Please try again.'
+      );
     }
   };
 

@@ -4,6 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, LoginCredentials, RegisterInput } from '@/types';
 import { authService } from '@/services/authService';
 
+const TOKEN_KEY = 'auth_token';
+const USER_KEY  = 'auth_user';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -15,40 +18,64 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType>(null!);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  // loading=false by default so pages render immediately.
-  // Only set true while verifying a stored token.
-  const [loading, setLoading] = useState(false);
+  const [user, setUser]       = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // ── Restore session on mount ──────────────────────────────────────────────
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const token    = localStorage.getItem(TOKEN_KEY);
+    const userJson = localStorage.getItem(USER_KEY);
 
-    setLoading(true);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    // Optimistically restore from cache so the UI doesn't flash
+    if (userJson) {
+      try {
+        setUser(JSON.parse(userJson) as User);
+      } catch {
+        // corrupted — ignore, will re-verify below
+      }
+    }
+
+    // Verify the token is still valid
     authService
       .verifyToken(token)
-      .then((userData) => setUser(userData))
-      .catch(() => localStorage.removeItem('token'))
+      .then((verified) => {
+        setUser(verified);
+        localStorage.setItem(USER_KEY, JSON.stringify(verified));
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Actions ───────────────────────────────────────────────────────────────
+
   async function login(credentials: LoginCredentials): Promise<User> {
     const { user: userData, token } = await authService.login(credentials);
-    localStorage.setItem('token', token);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setUser(userData);
     return userData;
   }
 
-  async function register(data: RegisterInput) {
+  async function register(data: RegisterInput): Promise<void> {
     const { user: userData, token } = await authService.register(data);
-    localStorage.setItem('token', token);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
     setUser(userData);
   }
 
-  async function logout() {
+  async function logout(): Promise<void> {
     await authService.logout();
-    localStorage.removeItem('token');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setUser(null);
   }
 
