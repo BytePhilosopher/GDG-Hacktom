@@ -762,14 +762,14 @@ After seeding, the following accounts are available:
 
 | Role | Email | Password |
 |---|---|---|
-| Driver | `driver@fuelq.et` | `password123` |
-| Station Admin | `admin@totalBole.et` | `password123` |
+| Driver | `bet30539@gmail.com` | `12345678` |
+| Station Admin | `admin@totalstation.com` | `admin123` |
 
 ### Chapa test payment
 
 When redirected to Chapa checkout in test mode:
-- **Phone:** `0911234567`
-- **PIN:** `1234`
+- **Phone:** `0900123456`
+- **PIN:** `12345`
 
 
 ---
