@@ -11,13 +11,13 @@ type StoredUser = User & { passwordHash: string };
 
 // ── Singleton pattern via global ──────────────────────────────────────────────
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __fuelq_users:    Map<string, StoredUser>  | undefined;
-  // eslint-disable-next-line no-var
+   
   var __fuelq_queues:   Map<string, Queue>       | undefined;
-  // eslint-disable-next-line no-var
+   
   var __fuelq_payments: Map<string, Payment>     | undefined;
-  // eslint-disable-next-line no-var
+   
   var __fuelq_stations: Map<string, Station>     | undefined;
 }
 

@@ -32,7 +32,7 @@ export async function PATCH(
     const { data: maxRow } = await adminClient
       .from('queues').select('position')
       .eq('station_id', profile.station_id)
-      .in('status', ['active', 'serving'])
+      .in('status', ['pending', 'active', 'serving'])
       .order('position', { ascending: false })
       .limit(1).maybeSingle();
 

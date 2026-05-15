@@ -31,15 +31,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Open a presence channel to track connection state
-    const channel = supabaseRef.current
+    const supabase = supabaseRef.current;
+    const channel = supabase
       .channel('presence-heartbeat')
       .subscribe((status) => {
         setConnected(status === 'SUBSCRIBED');
       });
 
     return () => {
-      supabaseRef.current.removeChannel(channel);
+      supabase.removeChannel(channel);
       setConnected(false);
     };
   }, [user]);

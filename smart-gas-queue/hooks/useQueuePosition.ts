@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function toQueue(raw: any): Queue {
   return {
     id:             raw.id,

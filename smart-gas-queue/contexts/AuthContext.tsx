@@ -44,11 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   async function fetchProfile(): Promise<User | null> {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (!res.ok) return null;
       return await res.json() as User;
     } catch {

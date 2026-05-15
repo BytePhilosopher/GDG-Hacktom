@@ -10,9 +10,11 @@ export function formatCurrency(amount: number | undefined | null): string {
   return `${amount.toLocaleString('en-ET')} ETB`;
 }
 
-export function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)}m`;
-  return `${km.toFixed(1)} km`;
+export function formatDistance(km: number | undefined | null): string {
+  if (km == null || Number.isNaN(Number(km))) return '';
+  const n = Number(km);
+  if (n < 1) return `${Math.round(n * 1000)} m`;
+  return `${n.toFixed(1)} km`;
 }
 
 export function calculateDistance(

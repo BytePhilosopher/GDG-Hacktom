@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '@/services/adminService';
 import { useAdminQueueRealtime } from '@/hooks/useAdminQueueRealtime';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +12,7 @@ type FuelFilter = 'All' | 'Benzene' | 'Diesel' | 'Kerosene';
 
 export default function AdminQueuePage() {
   const { user }                    = useAuth();
-  const { queue, setQueue, isLive } = useAdminQueueRealtime(user?.stationId);
+  const { queue, setQueue, isLive, refetch } = useAdminQueueRealtime(user?.stationId);
   const [fuelFilter, setFuelFilter] = useState<FuelFilter>('All');
   const [search, setSearch]         = useState('');
 
@@ -21,8 +22,13 @@ export default function AdminQueuePage() {
     setQueue((prev) =>
       prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, position: i + 1 }))
     );
-    await adminService.completeDriver(id);
-  }, [setQueue]);
+    try {
+      await adminService.completeDriver(id);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to mark complete');
+      void refetch();
+    }
+  }, [setQueue, refetch]);
 
   const handleSkip = useCallback(async (id: string) => {
     setQueue((prev) => {
@@ -31,15 +37,25 @@ export default function AdminQueuePage() {
       const rest = prev.filter((e) => e.id !== id);
       return [...rest, entry].map((e, i) => ({ ...e, position: i + 1 }));
     });
-    await adminService.skipDriver(id);
-  }, [setQueue]);
+    try {
+      await adminService.skipDriver(id);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to skip driver');
+      void refetch();
+    }
+  }, [setQueue, refetch]);
 
   const handleRemove = useCallback(async (id: string) => {
     setQueue((prev) =>
       prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, position: i + 1 }))
     );
-    await adminService.removeDriver(id);
-  }, [setQueue]);
+    try {
+      await adminService.removeDriver(id);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to remove driver');
+      void refetch();
+    }
+  }, [setQueue, refetch]);
 
   // ─── Filtering ────────────────────────────────────────────────────────────
 

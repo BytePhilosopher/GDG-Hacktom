@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
  * directly — RLS allows drivers to read their own rows.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function toQueue(raw: any): Queue {
   return {
     id:             raw.id,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { QueueEntry } from '@/types/admin';
 import { createClient } from '@/lib/supabase/client';
 
@@ -11,19 +11,21 @@ export function useAdminQueueRealtime(stationId: string | undefined) {
   const [isLive, setIsLive]       = useState(false);
   const channelRef                = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  async function fetchQueue() {
+  const fetchQueue = useCallback(async () => {
     if (!stationId) return;
-    const res = await fetch('/api/admin/queue');
+    const res = await fetch('/api/admin/queue', { credentials: 'include' });
     if (res.ok) {
-      const data = await res.json();
+      const data = (await res.json()) as QueueEntry[];
       setQueue(data);
+    } else {
+      setQueue([]);
     }
-  }
+  }, [stationId]);
 
   useEffect(() => {
     if (!stationId) return;
 
-    fetchQueue();
+    void fetchQueue();
 
     const channel = supabase
       .channel(`admin-queue-${stationId}`)
@@ -36,8 +38,7 @@ export function useAdminQueueRealtime(stationId: string | undefined) {
           filter: `station_id=eq.${stationId}`,
         },
         () => {
-          // Refetch full sorted queue on any change
-          fetchQueue();
+          void fetchQueue();
         }
       )
       .subscribe((status) => {
@@ -53,7 +54,7 @@ export function useAdminQueueRealtime(stationId: string | undefined) {
         setIsLive(false);
       }
     };
-  }, [stationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stationId, fetchQueue]);
 
   return { queue, setQueue, isLive, refetch: fetchQueue };
 }

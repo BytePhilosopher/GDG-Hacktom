@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -30,12 +30,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Protect /admin routes
   if (pathname.startsWith('/admin') && !user) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Protect /queue and /dashboard
   if (
     (pathname.startsWith('/queue') || pathname.startsWith('/dashboard')) &&
     !user

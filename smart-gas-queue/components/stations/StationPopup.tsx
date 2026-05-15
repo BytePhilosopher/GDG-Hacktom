@@ -15,6 +15,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Station } from '@/types';
+import { formatDistance } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
@@ -117,7 +118,7 @@ export function StationPopup({ station, onClose, onJoinQueue }: StationPopupProp
                 {station.distance != null && (
                   <div className="flex items-center gap-1.5 text-sm text-gray-700 font-medium">
                     <MapPin className="w-4 h-4 text-red-500" aria-hidden />
-                    <span>{station.distance} km away</span>
+                    <span>{formatDistance(station.distance)} away</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5 text-sm text-gray-700">

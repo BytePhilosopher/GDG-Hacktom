@@ -12,13 +12,13 @@ const schema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
+  { params }: { params: Promise<{ fuelType: string }> }
 ) {
   const guard = checkSupabase();
   if (guard) return guard;
 
   try {
-    const { type } = await params;
+    const { fuelType } = await params;
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -49,7 +49,7 @@ export async function PATCH(
       .from('station_fuels')
       .update(updates)
       .eq('station_id', profile.station_id)
-      .eq('fuel_type', type);
+      .eq('fuel_type', fuelType);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

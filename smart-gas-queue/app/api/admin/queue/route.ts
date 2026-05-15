@@ -30,7 +30,7 @@ export async function GET() {
         profiles!driver_id(full_name, phone, vehicles(plate_number, vehicle_type))
       `)
       .eq('station_id', profile.station_id)
-      .in('status', ['active', 'serving'])
+      .in('status', ['pending', 'active', 'serving'])
       .order('position', { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

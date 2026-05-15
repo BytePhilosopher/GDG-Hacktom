@@ -26,7 +26,7 @@ export async function GET() {
     const [inQueueRes, completedRes, fuelRes] = await Promise.all([
       adminClient.from('queues')
         .select('id', { count: 'exact', head: true })
-        .eq('station_id', stationId).in('status', ['active', 'serving']),
+        .eq('station_id', stationId).in('status', ['pending', 'active', 'serving']),
       adminClient.from('queues')
         .select('id', { count: 'exact', head: true })
         .eq('station_id', stationId).eq('status', 'completed')

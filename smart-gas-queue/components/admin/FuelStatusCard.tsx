@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 
 interface FuelStatusCardProps {
   fuel: AdminFuel;
-  onEdit: (fuel: AdminFuel) => void;
+  onEdit: (fuel: AdminFuel) => Promise<void>;
 }
 
 function getFuelStatus(stockLiters: number): {
@@ -69,14 +69,18 @@ export function FuelStatusCard({ fuel, onEdit }: FuelStatusCardProps) {
     setModalOpen(true);
   }
 
-  function onSubmit(data: EditForm) {
-    onEdit({
-      ...fuel,
-      stockLiters: Number(data.stockLiters),
-      pricePerLiter: Number(data.pricePerLiter),
-      available: data.available === 'available',
-    });
-    setModalOpen(false);
+  async function onSubmit(data: EditForm) {
+    try {
+      await onEdit({
+        ...fuel,
+        stockLiters: Number(data.stockLiters),
+        pricePerLiter: Number(data.pricePerLiter),
+        available: data.available === 'available',
+      });
+      setModalOpen(false);
+    } catch {
+      /* parent shows toast and rolls back */
+    }
   }
 
   return (

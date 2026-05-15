@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, CheckCircle2, Droplets, ArrowRight, Fuel } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { adminService } from '@/services/adminService';
 import { QueueEntry, AdminFuel, StationStats } from '@/types/admin';
 import { AdminHeader } from '@/components/admin/AdminHeader';
@@ -21,19 +22,32 @@ export default function AdminDashboardPage() {
   const [fuels, setFuels] = useState<AdminFuel[]>([]);
   const [stats, setStats] = useState<StationStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      adminService.getQueue(),
-      adminService.getFuels(),
-      adminService.getStats(),
-    ]).then(([q, f, s]) => {
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [q, f, s] = await Promise.all([
+        adminService.getQueue(),
+        adminService.getFuels(),
+        adminService.getStats(),
+      ]);
       setQueue(q);
       setFuels(f);
       setStats(s);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to load dashboard';
+      setLoadError(msg);
+      toast.error(msg);
+    } finally {
       setLoading(false);
-    });
+    }
   }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const previewQueue = queue.slice(0, 5);
 
@@ -41,6 +55,24 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AdminHeader />
+        <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-8 text-center max-w-lg mx-auto">
+          <p className="text-red-800 text-sm font-medium">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => void loadDashboard()}
+            className="mt-4 inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

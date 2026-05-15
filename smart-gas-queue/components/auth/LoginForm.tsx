@@ -87,6 +87,12 @@ export function LoginForm() {
         </button>
       </div>
 
+      <div className="flex justify-end">
+        <Link href="/forgot-password" className="text-sm text-red-600 font-medium hover:underline">
+          Forgot password?
+        </Link>
+      </div>
+
       {serverError && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert">
           <p className="text-sm text-red-700">{serverError}</p>

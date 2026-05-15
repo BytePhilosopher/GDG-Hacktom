@@ -18,7 +18,7 @@ export async function createClient() {
             );
           } catch {
             // Called from a Server Component — cookies can't be set.
-            // Middleware handles session refresh.
+            // Root `proxy.ts` refreshes the session on matched routes.
           }
         },
       },

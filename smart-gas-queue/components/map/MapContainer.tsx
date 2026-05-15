@@ -1,8 +1,17 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef } from 'react';
-import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
+import { GoogleMap, Marker, Circle, useJsApiLoader } from '@react-google-maps/api';
 import { LatLng, Station } from '@/types';
+
+/** Support both common env names (Vercel / docs often use …API_KEY). */
+export function getGoogleMapsBrowserKey(): string {
+  return (
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
+    ''
+  ).trim();
+}
 
 function circleSymbol(scale: number, fillColor: string, strokeColor = '#ffffff') {
   const gmaps = typeof window !== 'undefined' ? window.google?.maps : undefined;
@@ -32,15 +41,22 @@ interface MapContainerProps {
   onStationClick: (station: Station) => void;
 }
 
-export function MapContainer({
+/** Loads Maps JS once via `useJsApiLoader` (avoids duplicate `LoadScript` issues in React 18 / App Router). */
+function GoogleMapInner({
+  apiKey,
   center,
-  zoom = 14,
+  zoom,
   userLocation,
   stations,
   onStationClick,
-}: MapContainerProps) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
+}: MapContainerProps & { apiKey: string }) {
   const mapRef = useRef<google.maps.Map | null>(null);
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'fuelq-google-maps',
+    googleMapsApiKey: apiKey,
+    version: 'weekly',
+  });
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -56,6 +72,85 @@ export function MapContainer({
     map.panTo(center);
   }, [center]);
 
+  if (loadError) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-amber-50 to-red-50 flex items-center justify-center p-6">
+        <div className="max-w-md text-center rounded-xl border border-amber-200 bg-white/90 px-5 py-6 shadow-sm">
+          <p className="text-sm font-semibold text-gray-900">Could not load Google Maps</p>
+          <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+            Check that the <strong>Maps JavaScript API</strong> is enabled, billing is active, and this site&apos;s
+            URL is allowed under <strong>Application restrictions → HTTP referrers</strong> for your browser key.
+          </p>
+          <p className="text-xs text-gray-500 mt-3 font-mono break-all">
+            {String(loadError)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-100 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-red-600/25" />
+            <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-xs font-medium text-slate-600">Loading map…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerClassName="w-full h-full"
+      center={center}
+      zoom={zoom}
+      onLoad={onMapLoad}
+      onUnmount={onMapUnmount}
+      options={{
+        styles: MAP_STYLES,
+        disableDefaultUI: true,
+        zoomControl: true,
+        gestureHandling: 'greedy',
+      }}
+    >
+      {userLocation && (
+        <>
+          <Marker position={userLocation} icon={circleSymbol(8, '#3B82F6')} />
+          <Circle
+            center={userLocation}
+            radius={100}
+            options={{
+              fillColor: '#3B82F6',
+              fillOpacity: 0.1,
+              strokeColor: '#3B82F6',
+              strokeOpacity: 0.3,
+              strokeWeight: 1,
+            }}
+          />
+        </>
+      )}
+
+      {stations.map((station) => (
+        <Marker
+          key={station.id}
+          position={station.location}
+          onClick={() => onStationClick(station)}
+          icon={circleSymbol(9, '#DC2626')}
+          title={station.name}
+        />
+      ))}
+    </GoogleMap>
+  );
+}
+
+export function MapContainer(props: MapContainerProps) {
+  const { center, zoom = 14, userLocation, stations, onStationClick } = props;
+  const apiKey = getGoogleMapsBrowserKey();
+
   if (!apiKey) {
     return (
       <MockMap
@@ -67,61 +162,14 @@ export function MapContainer({
   }
 
   return (
-    <LoadScript
-      googleMapsApiKey={apiKey}
-      loadingElement={
-        <div className="w-full h-full bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-100 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative h-12 w-12">
-              <div className="absolute inset-0 rounded-full border-4 border-red-600/25" />
-              <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin" />
-            </div>
-            <p className="text-xs font-medium text-slate-600">Starting maps…</p>
-          </div>
-        </div>
-      }
-    >
-      <GoogleMap
-        mapContainerClassName="w-full h-full"
-        center={center}
-        zoom={zoom}
-        onLoad={onMapLoad}
-        onUnmount={onMapUnmount}
-        options={{
-          styles: MAP_STYLES,
-          disableDefaultUI: true,
-          zoomControl: true,
-          gestureHandling: 'greedy',
-        }}
-      >
-        {userLocation && (
-          <>
-            <Marker position={userLocation} icon={circleSymbol(8, '#3B82F6')} />
-            <Circle
-              center={userLocation}
-              radius={100}
-              options={{
-                fillColor: '#3B82F6',
-                fillOpacity: 0.1,
-                strokeColor: '#3B82F6',
-                strokeOpacity: 0.3,
-                strokeWeight: 1,
-              }}
-            />
-          </>
-        )}
-
-        {stations.map((station) => (
-          <Marker
-            key={station.id}
-            position={station.location}
-            onClick={() => onStationClick(station)}
-            icon={circleSymbol(9, '#DC2626')}
-            title={station.name}
-          />
-        ))}
-      </GoogleMap>
-    </LoadScript>
+    <GoogleMapInner
+      apiKey={apiKey}
+      center={center}
+      zoom={zoom}
+      userLocation={userLocation}
+      stations={stations}
+      onStationClick={onStationClick}
+    />
   );
 }
 
@@ -168,7 +216,7 @@ function MockMap({
         <div className="bg-white/80 backdrop-blur-sm rounded-xl px-4 py-2 shadow-sm text-center">
           <p className="text-xs font-medium text-gray-600">Map Preview</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Set NEXT_PUBLIC_GOOGLE_MAPS_KEY for live map
+            Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (or NEXT_PUBLIC_GOOGLE_MAPS_KEY) for live map
           </p>
         </div>
       </div>

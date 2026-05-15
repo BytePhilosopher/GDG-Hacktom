@@ -12,7 +12,6 @@ import {
   LocateFixed,
   LogIn,
   MapPin,
-  Navigation2,
   Radar,
   Sparkles,
 } from 'lucide-react';
@@ -21,6 +20,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { useAuth } from '@/contexts/AuthContext';
 import { stationService } from '@/services/stationService';
 import { FloatingSearchBar } from '@/components/map/FloatingSearchBar';
+import { NearbyStationsStrip } from '@/components/map/NearbyStationsStrip';
 import { StationPopup } from '@/components/stations/StationPopup';
 
 const MapContainer = dynamic(
@@ -57,16 +57,19 @@ export default function HomePage() {
   const { user } = useAuth();
   const { location: userLocation, locationReady, recenter, recentering } = useGeolocation();
   const [stations, setStations] = useState<Station[]>([]);
+  const [stationsLoading, setStationsLoading] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [mapCenter, setMapCenter] = useState({ lat: 9.005401, lng: 38.763611 });
 
   useEffect(() => {
     if (!locationReady) return;
     setMapCenter(userLocation);
+    setStationsLoading(true);
     stationService
       .getNearbyStations(userLocation.lat, userLocation.lng)
       .then(setStations)
-      .catch(() => setStations([]));
+      .catch(() => setStations([]))
+      .finally(() => setStationsLoading(false));
   }, [userLocation, locationReady]);
 
   const handleRecenter = useCallback(() => {
@@ -181,7 +184,7 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      {locationReady && stations.length > 0 && (
+      {locationReady && (stationsLoading || stations.length > 0) && (
         <motion.div
           className="absolute bottom-8 left-4 z-20 max-w-[min(100%,calc(100vw-5.5rem))] flex flex-col gap-2"
           initial={{ opacity: 0, y: 16 }}
@@ -206,20 +209,16 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/80 px-4 py-2.5 flex items-center gap-3">
-            <span className="relative flex h-3 w-3 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600" />
-            </span>
-            <Navigation2 className="w-4 h-4 text-red-600 shrink-0 motion-safe:animate-float" aria-hidden />
-            <span className="text-sm font-semibold text-slate-800 truncate">
-              {stations.length} stations nearby
-            </span>
-          </div>
+          <NearbyStationsStrip
+            stations={stations}
+            isLoading={stationsLoading}
+            selectedId={selectedStation?.id}
+            onSelect={handleStationSelect}
+          />
         </motion.div>
       )}
 
-      {locationReady && stations.length === 0 && (
+      {locationReady && !stationsLoading && stations.length === 0 && (
         <motion.div
           className="absolute bottom-8 left-4 z-20 max-w-[min(100%,calc(100vw-5.5rem))]"
           initial={{ opacity: 0, y: 16 }}

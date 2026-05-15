@@ -51,7 +51,7 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
     if (!txRef || hasVerified.current) return;
     hasVerified.current = true;
     runVerify(txRef);
-  }, [txRef]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [txRef]);  
 
   async function runVerify(ref: string) {
     setVerifyState('verifying');

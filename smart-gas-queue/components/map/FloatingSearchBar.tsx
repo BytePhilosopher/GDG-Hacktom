@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Fuel, MapPinOff, Search, X } from 'lucide-react';
 import { Station } from '@/types';
+import { formatDistance } from '@/lib/utils';
 
 interface FloatingSearchBarProps {
   stations: Station[];
@@ -112,7 +113,7 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
                   </div>
                   {station.distance != null && (
                     <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-lg flex-shrink-0">
-                      {station.distance} km
+                      {formatDistance(station.distance)}
                     </span>
                   )}
                 </motion.button>
