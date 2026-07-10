@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Phone, Mail, Lock, Car, Hash } from 'lucide-react';
+import { User, Phone, Mail, Lock, Car, Hash, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -20,10 +20,11 @@ const registerSchema = z
       .regex(/^(\+251|0)[79]\d{8}$/, 'Invalid Ethiopian phone number (e.g. 0912345678)'),
     email: z.string().email('Invalid email address'),
     plateNumber: z.string().min(4, 'Invalid plate number'),
-    vehicleType: z.enum(['sedan', 'suv', 'truck', 'motorcycle', 'van'] as const).refine(
-      (val) => ['sedan', 'suv', 'truck', 'motorcycle', 'van'].includes(val),
-      { message: 'Please select a vehicle type' }
-    ),
+    vehicleType: z
+      .enum(['sedan', 'suv', 'truck', 'motorcycle', 'van'] as const)
+      .refine((val) => ['sedan', 'suv', 'truck', 'motorcycle', 'van'].includes(val), {
+        message: 'Please select a vehicle type',
+      }),
     licenseNumber: z.string().min(5, 'Invalid license number'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
@@ -47,6 +48,8 @@ export function RegisterForm() {
   const { register: registerUser } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -67,10 +70,10 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-7" noValidate>
       {/* Personal Info */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
           Personal Information
         </h3>
         <div className="space-y-4">
@@ -78,7 +81,7 @@ export function RegisterForm() {
             label="Full Name"
             placeholder="Abebe Kebede"
             autoComplete="name"
-            icon={<User className="w-4 h-4" />}
+            icon={<User className="h-4 w-4" />}
             error={errors.fullName?.message}
             {...register('fullName')}
           />
@@ -87,7 +90,7 @@ export function RegisterForm() {
             type="tel"
             placeholder="0912345678"
             autoComplete="tel"
-            icon={<Phone className="w-4 h-4" />}
+            icon={<Phone className="h-4 w-4" />}
             hint="Ethiopian phone number format"
             error={errors.phone?.message}
             {...register('phone')}
@@ -97,7 +100,7 @@ export function RegisterForm() {
             type="email"
             placeholder="you@example.com"
             autoComplete="email"
-            icon={<Mail className="w-4 h-4" />}
+            icon={<Mail className="h-4 w-4" />}
             error={errors.email?.message}
             {...register('email')}
           />
@@ -106,14 +109,14 @@ export function RegisterForm() {
 
       {/* Vehicle Info */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pt-2">
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
           Vehicle Details
         </h3>
         <div className="space-y-4">
           <Input
             label="Plate Number"
             placeholder="AA-12345"
-            icon={<Hash className="w-4 h-4" />}
+            icon={<Hash className="h-4 w-4" />}
             error={errors.plateNumber?.message}
             {...register('plateNumber')}
           />
@@ -127,7 +130,7 @@ export function RegisterForm() {
           <Input
             label="License Number"
             placeholder="LIC-98765"
-            icon={<Car className="w-4 h-4" />}
+            icon={<Car className="h-4 w-4" />}
             error={errors.licenseNumber?.message}
             {...register('licenseNumber')}
           />
@@ -136,33 +139,66 @@ export function RegisterForm() {
 
       {/* Password */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 pt-2">
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
           Security
         </h3>
         <div className="space-y-4">
-          <Input
-            label="Password"
-            type="password"
-            placeholder="Min. 8 characters"
-            autoComplete="new-password"
-            icon={<Lock className="w-4 h-4" />}
-            error={errors.password?.message}
-            {...register('password')}
-          />
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="Repeat your password"
-            autoComplete="new-password"
-            icon={<Lock className="w-4 h-4" />}
-            error={errors.confirmPassword?.message}
-            {...register('confirmPassword')}
-          />
+          <div>
+            <Input
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Min. 8 characters"
+              autoComplete="new-password"
+              icon={<Lock className="h-4 w-4" />}
+              error={errors.password?.message}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors duration-200 ease-premium hover:text-gray-900"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+                <EyeOff className="h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Eye className="h-3.5 w-3.5" aria-hidden />
+              )}
+              {showPassword ? 'Hide password' : 'Show password'}
+            </button>
+          </div>
+          <div>
+            <Input
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="Repeat your password"
+              autoComplete="new-password"
+              icon={<Lock className="h-4 w-4" />}
+              error={errors.confirmPassword?.message}
+              {...register('confirmPassword')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors duration-200 ease-premium hover:text-gray-900"
+              aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Eye className="h-3.5 w-3.5" aria-hidden />
+              )}
+              {showConfirmPassword ? 'Hide password' : 'Show password'}
+            </button>
+          </div>
         </div>
       </div>
 
       {serverError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert">
+        <div
+          className="rounded-xl bg-red-50 px-4 py-3 ring-1 ring-inset ring-red-600/15"
+          role="alert"
+        >
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
@@ -173,7 +209,7 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
-        <Link href="/login" className="text-red-600 font-medium hover:underline">
+        <Link href="/login" className="font-medium text-red-600 hover:underline">
           Sign in
         </Link>
       </p>

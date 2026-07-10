@@ -31,80 +31,83 @@ function ProfileContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
+      <header className="glass sticky top-0 z-10 border-b border-gray-950/[0.06]">
+        <div className="mx-auto flex h-14 max-w-lg items-center gap-3 px-4">
           <Link
             href="/dashboard"
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors -ml-2"
+            className="-ml-2 rounded-full p-2 transition-colors hover:bg-gray-900/5"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="h-5 w-5 text-gray-600" aria-hidden />
           </Link>
-          <h1 className="font-semibold text-gray-900">My Profile</h1>
+          <h1 className="font-bold tracking-tight text-gray-900">My Profile</h1>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 pt-6 space-y-5">
+      <main className="mx-auto max-w-lg space-y-5 px-4 pt-6">
         {/* Avatar */}
         <div className="flex flex-col items-center py-4">
-          <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mb-3">
-            <span className="text-white text-3xl font-bold">
+          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-brand-gradient shadow-brand-glow ring-1 ring-white/20">
+            <span className="text-4xl font-bold text-white">
               {user.fullName.charAt(0).toUpperCase()}
             </span>
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{user.fullName}</h2>
-          <p className="text-sm text-gray-500">{user.email}</p>
+          <h2 className="text-xl font-bold tracking-tight text-gray-900">{user.fullName}</h2>
+          <p className="mt-0.5 text-sm text-gray-500">{user.email}</p>
         </div>
 
         {/* Personal info */}
         <Card>
-          <CardContent className="py-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          <CardContent className="py-5">
+            <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
               Personal Information
             </h3>
             <div className="space-y-4">
-              <InfoRow icon={<User className="w-4 h-4" />} label="Full Name" value={user.fullName} />
-              <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={user.phone} />
-              <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={user.email} />
+              <InfoRow
+                icon={<User className="h-4 w-4" />}
+                label="Full Name"
+                value={user.fullName}
+              />
+              <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={user.phone} />
+              <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={user.email} />
             </div>
           </CardContent>
         </Card>
 
         {/* Vehicle info — only shown for drivers */}
         {user.vehicleInfo && (
-        <Card>
-          <CardContent className="py-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Vehicle Details
-            </h3>
-            <div className="space-y-4">
-              <InfoRow
-                icon={<Hash className="w-4 h-4" />}
-                label="Plate Number"
-                value={user.vehicleInfo.plateNumber}
-              />
-              <InfoRow
-                icon={<Car className="w-4 h-4" />}
-                label="Vehicle Type"
-                value={user.vehicleInfo.vehicleType.charAt(0).toUpperCase() + user.vehicleInfo.vehicleType.slice(1)}
-              />
-              <InfoRow
-                icon={<Hash className="w-4 h-4" />}
-                label="License Number"
-                value={user.vehicleInfo.licenseNumber}
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="py-5">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Vehicle Details
+              </h3>
+              <div className="space-y-4">
+                <InfoRow
+                  icon={<Hash className="h-4 w-4" />}
+                  label="Plate Number"
+                  value={user.vehicleInfo.plateNumber}
+                />
+                <InfoRow
+                  icon={<Car className="h-4 w-4" />}
+                  label="Vehicle Type"
+                  value={
+                    user.vehicleInfo.vehicleType.charAt(0).toUpperCase() +
+                    user.vehicleInfo.vehicleType.slice(1)
+                  }
+                />
+                <InfoRow
+                  icon={<Hash className="h-4 w-4" />}
+                  label="License Number"
+                  value={user.vehicleInfo.licenseNumber}
+                />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Sign out */}
-        <Button
-          variant="danger"
-          className="w-full"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4" />
+        <Button variant="danger" className="w-full" onClick={handleLogout}>
+          <LogOut className="h-4 w-4" aria-hidden />
           Sign Out
         </Button>
       </main>
@@ -114,23 +117,15 @@ function ProfileContent() {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 flex-shrink-0">
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-950/[0.04]">
         {icon}
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm font-medium text-gray-900 truncate">{value}</p>
+        <p className="truncate text-sm font-medium text-gray-900">{value}</p>
       </div>
     </div>
   );

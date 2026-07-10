@@ -8,12 +8,11 @@ import { ChapaRawInitResponse } from '@/types';
 
 const CHAPA_API = 'https://api.chapa.co/v1';
 
+// Only the queue id is trusted from the client. The charge amount, fuel type,
+// and liters are re-derived server-side from the queue row created at join
+// time — never taken from the request body (prevents amount tampering).
 const schema = z.object({
-  stationId: z.string().min(1),
-  queueId:   z.string().uuid(),
-  fuelType:  z.string().min(1),
-  liters:    z.number().min(1),
-  amount:    z.number().min(1),
+  queueId: z.string().uuid(),
 });
 
 export async function POST(req: NextRequest) {
@@ -22,25 +21,39 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let body: unknown;
-    try { body = await req.json(); }
-    catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }); }
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const { queueId, fuelType, liters, amount } = parsed.data;
+    const { queueId } = parsed.data;
+
+    if (!process.env.CHAPA_SECRET_KEY) {
+      console.error('[payments/initialize] CHAPA_SECRET_KEY is not configured');
+      return NextResponse.json(
+        { error: 'Payments are not configured on this server.' },
+        { status: 503 }
+      );
+    }
 
     const { data: queue, error: queueError } = await adminClient
       .from('queues')
-      .select('id, driver_id, payment_status')
+      .select('id, driver_id, payment_status, advance_payment, fuel_type, liters')
       .eq('id', queueId)
       .single();
 
@@ -54,6 +67,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue is already paid' }, { status: 409 });
     }
 
+    // Authoritative values, computed and stored server-side at join time.
+    const amount = Number(queue.advance_payment);
+    const fuelType = queue.fuel_type;
+    const liters = queue.liters;
+    if (!Number.isFinite(amount) || amount < 1) {
+      return NextResponse.json({ error: 'Queue has no valid amount due' }, { status: 400 });
+    }
+
     const { data: profile } = await adminClient
       .from('profiles')
       .select('full_name, phone')
@@ -61,60 +82,103 @@ export async function POST(req: NextRequest) {
       .single();
 
     const nameParts = (profile?.full_name ?? 'User').split(' ');
-    const txRef     = `queue-${queueId.slice(0, 8)}-${uuidv4().slice(0, 8)}`;
-    const appUrl    = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+    const txRef = `queue-${queueId.slice(0, 8)}-${uuidv4().slice(0, 8)}`;
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
-    // Chapa rejects test/internal email domains — use a sanitised fallback
-    const chapaEmail = (user.email ?? '').includes('@') ? user.email! : `user_${user.id.slice(0,8)}@fuelq.et`;
+    // Chapa's email field is optional AND strictly validated (DNS-level domain
+    // checks) — a fabricated fallback address would be rejected outright, so
+    // only include the user's real email when present.
+    const chapaEmail = (user.email ?? '').includes('@') ? user.email : undefined;
 
-    const chapaPayload = {
-      amount:        amount.toFixed(2),
-      currency:      'ETB',
-      email:         chapaEmail,
-      first_name:    nameParts[0],
-      last_name:     nameParts.slice(1).join(' ') || 'User',
-      phone_number:  profile?.phone ?? '',
-      tx_ref:        txRef,
-      callback_url:  `${appUrl}/api/payments/webhook`,
-      return_url:    `${appUrl}/queue/${queueId}?trx_ref=${txRef}`,
+    const chapaPayload: Record<string, unknown> = {
+      amount: amount.toFixed(2),
+      currency: 'ETB',
+      ...(chapaEmail ? { email: chapaEmail } : {}),
+      first_name: nameParts[0],
+      last_name: nameParts.slice(1).join(' ') || 'User',
+      phone_number: profile?.phone ?? '',
+      tx_ref: txRef,
+      callback_url: `${appUrl}/api/payments/webhook`,
+      return_url: `${appUrl}/queue/${queueId}?trx_ref=${txRef}`,
       customization: { title: 'FuelQ Payment', description: `${liters}L ${fuelType} advance` },
+    };
+
+    const initializeWithChapa = async (
+      payload: Record<string, unknown>,
+      idempotencyKey: string
+    ): Promise<ChapaRawInitResponse> => {
+      const chapaRes = await fetch(`${CHAPA_API}/transaction/initialize`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: JSON.stringify(payload),
+      });
+      return (await chapaRes.json()) as ChapaRawInitResponse;
     };
 
     let chapaData: ChapaRawInitResponse;
     try {
-      const chapaRes = await fetch(`${CHAPA_API}/transaction/initialize`, {
-        method:  'POST',
-        headers: {
-          Authorization:     `Bearer ${process.env.CHAPA_SECRET_KEY}`,
-          'Content-Type':    'application/json',
-          'Idempotency-Key': txRef,
-        },
-        body: JSON.stringify(chapaPayload),
-      });
-      chapaData = await chapaRes.json() as ChapaRawInitResponse;
+      chapaData = await initializeWithChapa(chapaPayload, txRef);
+
+      // Chapa DNS-validates email domains and rejects unfamiliar ones even for
+      // syntactically valid addresses. Email is optional to Chapa — retry once
+      // without it instead of failing the whole payment.
+      const emailRejected =
+        chapaData.status !== 'success' &&
+        typeof chapaData.message === 'object' &&
+        chapaData.message !== null &&
+        'email' in chapaData.message;
+
+      if (chapaEmail && emailRejected) {
+        console.warn('[payments/initialize] Chapa rejected email — retrying without it');
+        const { email: _email, ...payloadWithoutEmail } = chapaPayload;
+        chapaData = await initializeWithChapa(payloadWithoutEmail, `${txRef}-ne`);
+      }
     } catch {
-      return NextResponse.json({ error: 'Could not reach Chapa. Please try again.' }, { status: 502 });
+      return NextResponse.json(
+        { error: 'Could not reach Chapa. Please try again.' },
+        { status: 502 }
+      );
     }
 
     if (chapaData.status !== 'success') {
-      return NextResponse.json({ error: 'Payment could not be processed.', detail: chapaData.message }, { status: 502 });
+      console.error(
+        '[payments/initialize] Chapa rejected the transaction:',
+        JSON.stringify(chapaData.message)
+      );
+      return NextResponse.json({ error: 'Payment could not be processed.' }, { status: 502 });
     }
 
+    // NOTE: never delete earlier pending payment rows here. A driver can
+    // initialize twice (back button, double tap) and still complete the FIRST
+    // checkout link — its tx_ref must remain resolvable so the webhook/verify
+    // can credit the queue. Multiple pending rows per queue are harmless: the
+    // first one to succeed flips the queue, and the "already paid" guard above
+    // blocks any further initialization.
     const { error: paymentError } = await adminClient.from('payments').insert({
-      queue_id:     queueId,
-      user_id:      user.id,
-      tx_ref:       txRef,
+      queue_id: queueId,
+      user_id: user.id,
+      tx_ref: txRef,
       amount,
-      currency:     'ETB',
-      status:       'pending',
+      currency: 'ETB',
+      status: 'pending',
       initiated_at: new Date().toISOString(),
     });
 
     if (paymentError) {
-      return NextResponse.json({ error: paymentError.message }, { status: 500 });
+      console.error('[payments/initialize] Failed to record payment:', paymentError);
+      return NextResponse.json({ error: 'Could not record payment' }, { status: 500 });
     }
 
-    return NextResponse.json({ checkoutUrl: chapaData.data.checkout_url, txRef, advanceAmount: amount, totalAmount: amount / 0.25 });
+    return NextResponse.json({
+      checkoutUrl: chapaData.data.checkout_url,
+      txRef,
+      advanceAmount: amount,
+      totalAmount: Math.round((amount / 0.25) * 100) / 100,
+    });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

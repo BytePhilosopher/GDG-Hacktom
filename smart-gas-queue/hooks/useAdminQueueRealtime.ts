@@ -7,18 +7,25 @@ import { createClient } from '@/lib/supabase/client';
 const supabase = createClient();
 
 export function useAdminQueueRealtime(stationId: string | undefined) {
-  const [queue, setQueue]         = useState<QueueEntry[]>([]);
-  const [isLive, setIsLive]       = useState(false);
-  const channelRef                = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const [queue, setQueue] = useState<QueueEntry[]>([]);
+  const [isLive, setIsLive] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchQueue = useCallback(async () => {
     if (!stationId) return;
-    const res = await fetch('/api/admin/queue', { credentials: 'include' });
-    if (res.ok) {
+    setError(false);
+    try {
+      const res = await fetch('/api/admin/queue', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load queue');
       const data = (await res.json()) as QueueEntry[];
       setQueue(data);
-    } else {
+    } catch {
       setQueue([]);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
   }, [stationId]);
 
@@ -32,9 +39,9 @@ export function useAdminQueueRealtime(stationId: string | undefined) {
       .on(
         'postgres_changes',
         {
-          event:  '*',
+          event: '*',
           schema: 'public',
-          table:  'queues',
+          table: 'queues',
           filter: `station_id=eq.${stationId}`,
         },
         () => {
@@ -56,5 +63,5 @@ export function useAdminQueueRealtime(stationId: string | undefined) {
     };
   }, [stationId, fetchQueue]);
 
-  return { queue, setQueue, isLive, refetch: fetchQueue };
+  return { queue, setQueue, isLive, loading, error, refetch: fetchQueue };
 }

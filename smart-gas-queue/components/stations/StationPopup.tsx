@@ -55,20 +55,20 @@ export function StationPopup({ station, onClose, onJoinQueue }: StationPopupProp
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 32, stiffness: 340 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl border-t border-gray-100 safe-area-pb overflow-hidden"
+            className="safe-area-pb fixed bottom-0 left-0 right-0 z-50 overflow-hidden rounded-t-3xl bg-white shadow-premium ring-1 ring-gray-950/[0.06]"
           >
             <motion.div
-              className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-red-500/40 to-transparent"
+              className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"
               initial={{ scaleX: 0, opacity: 0 }}
               animate={{ scaleX: 1, opacity: 1 }}
               transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             />
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            <div className="flex justify-center pb-1 pt-3">
+              <div className="h-1 w-10 rounded-full bg-gray-200" />
             </div>
 
-            <div className="px-6 pb-8 pt-2 max-h-[85vh] overflow-y-auto">
-              <div className="relative h-36 -mx-2 mb-4 rounded-2xl overflow-hidden bg-gray-100 shadow-inner">
+            <div className="max-h-[85vh] overflow-y-auto px-6 pb-8 pt-2">
+              <div className="relative -mx-2 mb-4 h-36 overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-950/[0.06]">
                 {station.imageUrl ? (
                   <Image
                     src={station.imageUrl}
@@ -79,57 +79,57 @@ export function StationPopup({ station, onClose, onJoinQueue }: StationPopupProp
                     priority
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-600 to-red-900">
-                    <Fuel className="w-14 h-14 text-white/90" aria-hidden />
+                  <div className="absolute inset-0 flex items-center justify-center bg-brand-radial">
+                    <Fuel className="h-14 w-14 text-white/90" aria-hidden />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
-                  <h3 className="text-lg font-bold text-white drop-shadow-sm line-clamp-2 leading-tight">
+                  <h3 className="line-clamp-2 text-lg font-bold leading-tight tracking-tight text-white drop-shadow-sm">
                     {station.name}
                   </h3>
                   {station.queueSize != null && (
-                    <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-gray-800 shadow">
-                      <Route className="w-3.5 h-3.5 text-red-600" aria-hidden />
-                      {station.queueSize} in queue
+                    <span className="glass inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-900 shadow-float">
+                      <Route className="h-3.5 w-3.5 text-primary-600" aria-hidden />
+                      <span className="font-mono">{station.queueSize}</span> in queue
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-start justify-between mb-4 -mt-1">
-                <div className="flex-1 min-w-0 pr-2">
+              <div className="-mt-1 mb-4 flex items-start justify-between">
+                <div className="min-w-0 flex-1 pr-2">
                   <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 text-red-500 flex-shrink-0" aria-hidden />
+                    <MapPin className="h-4 w-4 flex-shrink-0 text-red-500" aria-hidden />
                     <p className="truncate">{station.location.address}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+                  className="flex-shrink-0 rounded-full p-2 text-gray-500 transition-colors duration-200 ease-premium hover:bg-gray-950/[0.05] hover:text-gray-700"
                   aria-label="Close popup"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="flex items-center gap-4 mb-5 flex-wrap">
+              <div className="mb-5 flex flex-wrap items-center gap-2.5">
                 {station.distance != null && (
-                  <div className="flex items-center gap-1.5 text-sm text-gray-700 font-medium">
-                    <MapPin className="w-4 h-4 text-red-500" aria-hidden />
-                    <span>{formatDistance(station.distance)} away</span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-950/[0.06]">
+                    <MapPin className="h-4 w-4 text-primary-500" aria-hidden />
+                    <span className="font-mono">{formatDistance(station.distance)}</span> away
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                  <Clock className="w-4 h-4 text-emerald-500" aria-hidden />
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1.5 text-sm text-gray-600 ring-1 ring-inset ring-gray-950/[0.06]">
+                  <Clock className="h-4 w-4 text-emerald-500" aria-hidden />
                   <span>{station.workingHours}</span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Fuel className="w-4 h-4 text-red-600" aria-hidden />
+                <p className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <Fuel className="h-4 w-4 text-primary-600" aria-hidden />
                   Fuel types
                 </p>
                 <motion.div
@@ -142,13 +142,15 @@ export function StationPopup({ station, onClose, onJoinQueue }: StationPopupProp
                     <motion.div key={fuel.type} variants={itemVariants}>
                       <Badge variant={fuel.available ? 'success' : 'error'} className="gap-1.5">
                         {fuel.available ? (
-                          <CircleCheck className="w-3.5 h-3.5" aria-hidden />
+                          <CircleCheck className="h-3.5 w-3.5" aria-hidden />
                         ) : (
-                          <CircleX className="w-3.5 h-3.5" aria-hidden />
+                          <CircleX className="h-3.5 w-3.5" aria-hidden />
                         )}
                         {fuel.type}
                         {fuel.available && (
-                          <span className="ml-0.5 opacity-80">· {fuel.pricePerLiter} ETB/L</span>
+                          <span className="ml-0.5 font-mono opacity-80">
+                            · {fuel.pricePerLiter} ETB/L
+                          </span>
                         )}
                       </Badge>
                     </motion.div>
@@ -159,20 +161,28 @@ export function StationPopup({ station, onClose, onJoinQueue }: StationPopupProp
               <Button
                 type="button"
                 onClick={() => onJoinQueue(station)}
-                className="w-full shadow-lg shadow-red-600/20 group relative overflow-hidden"
+                className="group relative w-full overflow-hidden"
                 size="lg"
                 disabled={!station.fuels.some((f) => f.available)}
               >
-                <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative z-10 inline-flex items-center gap-2">
-                  <Zap className="w-4 h-4 opacity-90 motion-safe:group-hover:animate-pulse" aria-hidden />
+                  <Zap
+                    className="h-4 w-4 opacity-90 motion-safe:group-hover:animate-pulse"
+                    aria-hidden
+                  />
                   Join Queue
-                  <ChevronRight className="w-5 h-5 motion-safe:group-hover:translate-x-0.5 transition-transform" aria-hidden />
+                  <ChevronRight
+                    className="h-5 w-5 transition-transform motion-safe:group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
                 </span>
               </Button>
 
               {!station.fuels.some((f) => f.available) && (
-                <p className="text-center text-sm text-gray-500 mt-2">No fuel available at this station</p>
+                <p className="mt-2 text-center text-sm text-gray-500">
+                  No fuel available at this station
+                </p>
               )}
             </div>
           </motion.div>

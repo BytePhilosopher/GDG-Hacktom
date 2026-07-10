@@ -12,18 +12,18 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 const loginSchema = z.object({
-  email:    z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const { login }      = useAuth();
-  const router         = useRouter();
-  const searchParams   = useSearchParams();
+  const { login } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError,  setServerError]  = useState('');
+  const [serverError, setServerError] = useState('');
 
   const {
     register,
@@ -48,9 +48,7 @@ export function LoginForm() {
       const redirect = searchParams.get('redirect');
       router.push(redirect ?? '/');
     } catch (err: unknown) {
-      setServerError(
-        err instanceof Error ? err.message : 'Login failed. Please try again.'
-      );
+      setServerError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     }
   };
 
@@ -61,7 +59,7 @@ export function LoginForm() {
         type="email"
         placeholder="you@example.com"
         autoComplete="email"
-        icon={<Mail className="w-4 h-4" />}
+        icon={<Mail className="h-4 w-4" />}
         error={errors.email?.message}
         {...register('email')}
       />
@@ -72,29 +70,36 @@ export function LoginForm() {
           type={showPassword ? 'text' : 'password'}
           placeholder="Enter your password"
           autoComplete="current-password"
-          icon={<Lock className="w-4 h-4" />}
+          icon={<Lock className="h-4 w-4" />}
           error={errors.password?.message}
           {...register('password')}
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="mt-1 text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+          className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors duration-200 ease-premium hover:text-gray-900"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-          {showPassword ? 'Hide' : 'Show'} password
+          {showPassword ? (
+            <EyeOff className="h-3.5 w-3.5" aria-hidden />
+          ) : (
+            <Eye className="h-3.5 w-3.5" aria-hidden />
+          )}
+          {showPassword ? 'Hide password' : 'Show password'}
         </button>
       </div>
 
       <div className="flex justify-end">
-        <Link href="/forgot-password" className="text-sm text-red-600 font-medium hover:underline">
+        <Link href="/forgot-password" className="text-sm font-medium text-red-600 hover:underline">
           Forgot password?
         </Link>
       </div>
 
       {serverError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert">
+        <div
+          className="rounded-xl bg-red-50 px-4 py-3 ring-1 ring-inset ring-red-600/15"
+          role="alert"
+        >
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
@@ -105,7 +110,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-gray-600">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-red-600 font-medium hover:underline">
+        <Link href="/register" className="font-medium text-red-600 hover:underline">
           Create account
         </Link>
       </p>

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { Mail } from 'lucide-react';
+import { Mail, MailCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
@@ -49,11 +49,18 @@ export function ForgotPasswordForm() {
 
   if (sent) {
     return (
-      <div className="space-y-4 text-center">
-        <p className="text-sm text-gray-600">
+      <div className="flex flex-col items-center text-center">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-600/15">
+          <MailCheck className="h-7 w-7" aria-hidden />
+        </div>
+        <h2 className="text-lg font-bold tracking-tight text-gray-900">Check your inbox</h2>
+        <p className="mt-2 text-sm leading-relaxed text-gray-600">
           Check your inbox (and spam folder) for an email from us with a link to set a new password.
         </p>
-        <Link href="/login" className="inline-block text-sm text-red-600 font-medium hover:underline">
+        <Link
+          href="/login"
+          className="mt-6 text-sm font-medium text-red-600 transition-colors duration-200 ease-premium hover:text-red-700 hover:underline"
+        >
           Back to sign in
         </Link>
       </div>
@@ -67,13 +74,16 @@ export function ForgotPasswordForm() {
         type="email"
         placeholder="you@example.com"
         autoComplete="email"
-        icon={<Mail className="w-4 h-4" />}
+        icon={<Mail className="h-4 w-4" />}
         error={errors.email?.message}
         {...register('email')}
       />
 
       {serverError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3" role="alert">
+        <div
+          className="rounded-xl bg-red-50 px-4 py-3 ring-1 ring-inset ring-red-600/15"
+          role="alert"
+        >
           <p className="text-sm text-red-700">{serverError}</p>
         </div>
       )}
@@ -83,7 +93,7 @@ export function ForgotPasswordForm() {
       </Button>
 
       <p className="text-center text-sm text-gray-600">
-        <Link href="/login" className="text-red-600 font-medium hover:underline">
+        <Link href="/login" className="font-medium text-red-600 hover:underline">
           Back to sign in
         </Link>
       </p>

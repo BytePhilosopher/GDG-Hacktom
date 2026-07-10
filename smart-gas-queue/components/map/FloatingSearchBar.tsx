@@ -34,15 +34,15 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
   };
 
   return (
-    <div className="absolute top-4 left-4 right-[5.25rem] z-20 sm:right-24">
+    <div className="absolute left-4 right-[5.25rem] top-4 z-20 sm:right-24">
       <motion.div
         className="relative"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 28 }}
       >
-        <div className="flex items-center bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/80 px-3 sm:px-4 h-14 ring-1 ring-black/[0.03] focus-within:ring-red-500/20 focus-within:border-red-200 transition-shadow">
-          <Search className="w-5 h-5 text-red-500/80 flex-shrink-0" aria-hidden />
+        <div className="glass flex h-14 items-center rounded-2xl px-3 shadow-float ring-1 ring-gray-950/[0.06] transition-all duration-200 ease-premium focus-within:shadow-premium focus-within:ring-primary-500/25 sm:px-4">
+          <Search className="h-5 w-5 flex-shrink-0 text-primary-500" aria-hidden />
           <input
             type="text"
             role="combobox"
@@ -55,7 +55,7 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
               setFocused(false);
             }}
             placeholder="Search gas stations…"
-            className="flex-1 ml-3 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 text-sm min-w-0"
+            className="ml-3 min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-500"
             aria-label="Search gas stations"
             aria-expanded={showResults}
             aria-controls="station-search-results"
@@ -65,10 +65,10 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="p-1.5 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+              className="shrink-0 rounded-full p-1.5 text-gray-500 transition-colors duration-200 ease-premium hover:bg-gray-950/[0.05] hover:text-gray-700"
               aria-label="Clear search"
             >
-              <X className="w-4 h-4 text-gray-400" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -82,14 +82,14 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-200/90 overflow-hidden max-h-[min(60vh,320px)] overflow-y-auto"
+              className="glass absolute left-0 right-0 top-full mt-2 max-h-[min(60vh,320px)] overflow-hidden overflow-y-auto rounded-2xl p-1.5 shadow-premium ring-1 ring-gray-950/[0.06]"
             >
               {!hasMatches && (
-                <div className="flex items-center gap-3 px-4 py-6 text-center justify-center">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                <div className="flex items-center justify-center gap-3 px-4 py-6 text-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
                     <MapPinOff className="h-5 w-5" aria-hidden />
                   </div>
-                  <p className="text-sm text-slate-600">No stations match that search.</p>
+                  <p className="text-sm text-gray-600">No stations match that search.</p>
                 </div>
               )}
               {filtered.map((station, i) => (
@@ -100,19 +100,19 @@ export function FloatingSearchBar({ stations, onStationSelect }: FloatingSearchB
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50/80 active:bg-red-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-200 ease-premium hover:bg-primary-50/80 active:bg-primary-50"
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSelect(station)}
                 >
-                  <div className="w-9 h-9 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <Fuel className="w-4 h-4 text-white" aria-hidden />
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-brand-gradient shadow-soft">
+                    <Fuel className="h-4 w-4 text-white" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{station.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{station.location.address}</p>
+                    <p className="truncate text-sm font-semibold text-gray-900">{station.name}</p>
+                    <p className="truncate text-xs text-gray-500">{station.location.address}</p>
                   </div>
                   {station.distance != null && (
-                    <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-lg flex-shrink-0">
+                    <span className="flex-shrink-0 rounded-full bg-primary-50 px-2.5 py-1 font-mono text-xs font-semibold text-primary-600 ring-1 ring-inset ring-primary-600/15">
                       {formatDistance(station.distance)}
                     </span>
                   )}

@@ -1,28 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminClient } from '@/lib/supabase/admin';
 import { checkSupabase } from '@/lib/supabase/guard';
+import { serverError } from '@/lib/apiResponse';
 
 export async function GET(req: NextRequest) {
   const guard = checkSupabase();
   if (guard) return guard;
   try {
     const { searchParams } = new URL(req.url);
-    const lat    = parseFloat(searchParams.get('lat')    ?? '');
-    const lng    = parseFloat(searchParams.get('lng')    ?? '');
+    const lat = parseFloat(searchParams.get('lat') ?? '');
+    const lng = parseFloat(searchParams.get('lng') ?? '');
     const radius = parseFloat(searchParams.get('radius') ?? '10000');
 
     if (isNaN(lat) || isNaN(lng)) {
       return NextResponse.json({ error: 'lat and lng query params are required' }, { status: 400 });
     }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return NextResponse.json({ error: 'lat/lng out of range' }, { status: 400 });
+    }
+
+    // Clamp the search radius to a sane bound (100m–50km) to prevent abuse.
+    const radiusMeters = Math.min(Math.max(isNaN(radius) ? 10000 : radius, 100), 50000);
 
     const { data, error } = await adminClient.rpc('get_nearby_stations', {
-      user_lat:      lat,
-      user_lng:      lng,
-      radius_meters: radius,
+      user_lat: lat,
+      user_lng: lng,
+      radius_meters: radiusMeters,
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return serverError('stations/nearby', error);
     }
 
     // Fetch fuels for returned stations
@@ -38,21 +45,29 @@ export async function GET(req: NextRequest) {
       fuelsByStation[f.station_id]!.push(f);
     }
 
-    const stations = (data as {
-      id: string; name: string; address: string; lat: number; lng: number;
-      working_hours: string; image_url: string; distance_meters: number;
-    }[]).map((s) => ({
-      id:           s.id,
-      name:         s.name,
-      location:     { lat: s.lat, lng: s.lng, address: s.address },
+    const stations = (
+      data as {
+        id: string;
+        name: string;
+        address: string;
+        lat: number;
+        lng: number;
+        working_hours: string;
+        image_url: string;
+        distance_meters: number;
+      }[]
+    ).map((s) => ({
+      id: s.id,
+      name: s.name,
+      location: { lat: s.lat, lng: s.lng, address: s.address },
       workingHours: s.working_hours,
-      imageUrl:     s.image_url,
-      distance:     parseFloat((s.distance_meters / 1000).toFixed(2)),
+      imageUrl: s.image_url,
+      distance: parseFloat((s.distance_meters / 1000).toFixed(2)),
       fuels: (fuelsByStation[s.id] ?? []).map((f) => ({
-        type:              f.fuel_type,
-        available:         f.available,
+        type: f.fuel_type,
+        available: f.available,
         remainingQuantity: f.stock_liters,
-        pricePerLiter:     f.price_per_liter,
+        pricePerLiter: f.price_per_liter,
       })),
     }));
 

@@ -2,22 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { adminClient } from '@/lib/supabase/admin';
 import { checkSupabase } from '@/lib/supabase/guard';
+import { serverError } from '@/lib/apiResponse';
 
-export async function PATCH(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const guard = checkSupabase();
   if (guard) return guard;
 
   try {
     const { id } = await params;
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { data: profile } = await adminClient
-      .from('profiles').select('role, station_id').eq('id', user.id).single();
+      .from('profiles')
+      .select('role, station_id')
+      .eq('id', user.id)
+      .single();
 
     if (profile?.role !== 'station_admin' || !profile.station_id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -44,7 +48,7 @@ export async function PATCH(
       .update({ status: 'completed' })
       .eq('id', id);
     if (statusErr) {
-      return NextResponse.json({ error: statusErr.message }, { status: 500 });
+      return serverError('admin/queue/complete', statusErr);
     }
 
     const { error: shiftErr } = await adminClient.rpc('shift_queue_positions', {
@@ -52,7 +56,7 @@ export async function PATCH(
       p_completed_position: queue.position,
     });
     if (shiftErr) {
-      return NextResponse.json({ error: shiftErr.message }, { status: 500 });
+      return serverError('admin/queue/complete', shiftErr);
     }
 
     const { error: histErr } = await adminClient.from('queue_history').insert({
@@ -63,7 +67,7 @@ export async function PATCH(
       performed_by: user.id,
     });
     if (histErr) {
-      return NextResponse.json({ error: histErr.message }, { status: 500 });
+      return serverError('admin/queue/complete', histErr);
     }
 
     if (liters > 0 && fuelType) {
@@ -84,11 +88,11 @@ export async function PATCH(
           .eq('fuel_type', fuelType);
 
         if (stockErr) {
+          console.error('[admin/queue/complete] stock update failed', stockErr);
           return NextResponse.json(
             {
               error:
                 'Driver marked complete, but fuel inventory could not be updated. Adjust stock manually in admin.',
-              details: stockErr.message,
             },
             { status: 500 }
           );

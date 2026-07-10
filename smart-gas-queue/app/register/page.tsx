@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Fuel, ArrowLeft } from 'lucide-react';
+import { Fuel, ArrowLeft, Zap, CreditCard, Bell } from 'lucide-react';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 
 export const metadata = {
@@ -9,37 +9,95 @@ export const metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
+    <div className="flex min-h-screen">
+      {/* Left panel - branding (hidden on mobile) */}
+      <div className="relative hidden flex-col justify-center overflow-hidden bg-brand-radial p-12 md:sticky md:top-0 md:flex md:h-screen md:w-1/2 md:self-start">
+        {/* Concentric rings */}
+        <div className="absolute inset-0 opacity-[0.12]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full border border-white"
+              style={{
+                width: `${(i + 1) * 120}px`,
+                height: `${(i + 1) * 120}px`,
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          ))}
+        </div>
+        {/* Soft light bloom */}
+        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
+        <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-black/20 blur-3xl" />
+
+        <div className="relative z-10 mx-auto max-w-sm">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-white/15 shadow-2xl ring-1 ring-white/25 backdrop-blur-sm">
+            <Fuel className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="mb-3 text-4xl font-bold tracking-tight text-white">Join FuelQ today</h1>
+          <p className="max-w-xs text-lg leading-relaxed text-red-50/90">
+            Create your account in minutes and never wait in a fuel line again.
+          </p>
+
+          <ul className="mt-10 space-y-4">
+            {[
+              { icon: Zap, title: 'Reserve your spot', desc: 'Join any station queue digitally' },
+              {
+                icon: CreditCard,
+                title: 'Pay in advance',
+                desc: 'Lock your place with 25% upfront',
+              },
+              { icon: Bell, title: 'Stay informed', desc: 'Live updates on your position' },
+            ].map((item) => (
+              <li
+                key={item.title}
+                className="flex items-start gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-inset ring-white/15 backdrop-blur-sm transition-colors hover:bg-white/[0.14]"
+              >
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-inset ring-white/25 backdrop-blur-sm">
+                  <item.icon className="h-5 w-5 text-white" aria-hidden />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-white">{item.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-red-50/70">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Right panel - form */}
+      <div className="flex flex-1 flex-col bg-white px-6 py-8 md:px-12 md:py-12">
+        <div className="mx-auto w-full max-w-md">
+          {/* Back to login */}
           <Link
             href="/login"
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors -ml-2"
-            aria-label="Back to login"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors duration-200 ease-premium hover:text-gray-900"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Back to sign in
           </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center">
-              <Fuel className="w-4 h-4 text-white" />
+
+          {/* Mobile logo */}
+          <div className="mb-8 flex items-center gap-3 md:hidden">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient shadow-brand-glow">
+              <Fuel className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-gray-900">FuelQ</span>
+            <span className="text-xl font-bold tracking-tight text-gray-900">FuelQ</span>
           </div>
-        </div>
-      </header>
 
-      {/* Content */}
-      <main className="max-w-lg mx-auto px-4 py-6 pb-12">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-          <p className="text-gray-500 mt-1">Join thousands of drivers saving time at fuel stations</p>
-        </div>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Create your account</h2>
+            <p className="mt-1.5 leading-relaxed text-gray-500">
+              Join thousands of drivers saving time at fuel stations.
+            </p>
+          </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <RegisterForm />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

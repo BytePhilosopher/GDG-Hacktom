@@ -19,9 +19,9 @@ const sizeMap = {
 export function LoadingSpinner({ size = 'md', className, fullScreen, text }: LoadingSpinnerProps) {
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
         <Loader2 className={cn('animate-spin text-red-600', sizeMap[size], className)} />
-        {text && <p className="mt-3 text-gray-600 text-sm">{text}</p>}
+        {text && <p className="mt-3 text-sm text-gray-600">{text}</p>}
       </div>
     );
   }
@@ -29,7 +29,7 @@ export function LoadingSpinner({ size = 'md', className, fullScreen, text }: Loa
   return (
     <div className={cn('flex flex-col items-center justify-center p-8', className)}>
       <Loader2 className={cn('animate-spin text-red-600', sizeMap[size])} />
-      {text && <p className="mt-3 text-gray-600 text-sm">{text}</p>}
+      {text && <p className="mt-3 text-sm text-gray-600">{text}</p>}
     </div>
   );
 }

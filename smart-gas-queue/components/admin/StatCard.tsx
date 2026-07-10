@@ -11,24 +11,20 @@ interface StatCardProps {
 
 const colorMap = {
   red: {
-    bg: 'bg-red-50',
-    icon: 'bg-red-100 text-red-600',
-    value: 'text-red-600',
+    icon: 'bg-red-50 text-red-600 ring-red-600/10',
+    accent: 'from-red-500/60',
   },
   green: {
-    bg: 'bg-emerald-50',
-    icon: 'bg-emerald-100 text-emerald-600',
-    value: 'text-emerald-600',
+    icon: 'bg-emerald-50 text-emerald-600 ring-emerald-600/10',
+    accent: 'from-emerald-500/60',
   },
   yellow: {
-    bg: 'bg-amber-50',
-    icon: 'bg-amber-100 text-amber-600',
-    value: 'text-amber-600',
+    icon: 'bg-amber-50 text-amber-600 ring-amber-600/10',
+    accent: 'from-amber-500/60',
   },
   gray: {
-    bg: 'bg-gray-50',
-    icon: 'bg-gray-100 text-gray-600',
-    value: 'text-gray-900',
+    icon: 'bg-gray-100 text-gray-600 ring-gray-600/10',
+    accent: 'from-gray-400/60',
   },
 };
 
@@ -36,18 +32,30 @@ export function StatCard({ label, value, icon, color = 'gray', subtitle }: StatC
   const styles = colorMap[color];
 
   return (
-    <div
-      className={cn(
-        'rounded-xl p-5 border border-gray-200 bg-white shadow-sm flex items-center gap-4'
-      )}
-    >
-      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0', styles.icon)}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm text-gray-500 font-medium">{label}</p>
-        <p className={cn('text-2xl font-bold mt-0.5', styles.value)}>{value}</p>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+    <div className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-card ring-1 ring-gray-950/[0.06] transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:shadow-premium motion-reduce:hover:translate-y-0">
+      {/* Top accent line */}
+      <div
+        className={cn(
+          'absolute inset-x-0 top-0 h-px bg-gradient-to-r to-transparent',
+          styles.accent
+        )}
+        aria-hidden
+      />
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-500">{label}</p>
+          <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-gray-900">{value}</p>
+          {subtitle && <p className="mt-1 text-xs text-gray-500">{subtitle}</p>}
+        </div>
+        <div
+          className={cn(
+            'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-200 ease-premium group-hover:scale-105',
+            styles.icon
+          )}
+          aria-hidden
+        >
+          {icon}
+        </div>
       </div>
     </div>
   );

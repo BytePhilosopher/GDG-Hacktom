@@ -8,7 +8,10 @@ export async function GET() {
   if (guard) return guard;
   try {
     const supabase = await createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -33,8 +36,8 @@ export async function GET() {
         .single();
       if (vehicle) {
         vehicleInfo = {
-          plateNumber:   vehicle.plate_number,
-          vehicleType:   vehicle.vehicle_type,
+          plateNumber: vehicle.plate_number,
+          vehicleType: vehicle.vehicle_type,
           licenseNumber: vehicle.license_number,
         };
       }
@@ -51,15 +54,15 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      id:          user.id,
-      email:       user.email!,
-      fullName:    profile.full_name,
-      phone:       profile.phone,
-      role:        profile.role as 'driver' | 'station_admin',
-      stationId:   profile.station_id ?? undefined,
+      id: user.id,
+      email: user.email!,
+      fullName: profile.full_name,
+      phone: profile.phone,
+      role: profile.role as 'driver' | 'station_admin',
+      stationId: profile.station_id ?? undefined,
       stationName: stationName,
       vehicleInfo: vehicleInfo ?? undefined,
-      createdAt:   user.created_at,
+      createdAt: user.created_at,
     });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

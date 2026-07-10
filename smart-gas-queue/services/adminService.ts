@@ -52,12 +52,12 @@ export const adminService = {
   async updateFuel(fuel: AdminFuel): Promise<void> {
     const res = await fetch(`/api/admin/fuels/${encodeURIComponent(fuel.type)}`, {
       ...cred,
-      method:  'PATCH',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        stockLiters:   fuel.stockLiters,
+      body: JSON.stringify({
+        stockLiters: fuel.stockLiters,
         pricePerLiter: fuel.pricePerLiter,
-        available:     fuel.available,
+        available: fuel.available,
       }),
     });
     if (!res.ok) throw new Error(await apiError(res));

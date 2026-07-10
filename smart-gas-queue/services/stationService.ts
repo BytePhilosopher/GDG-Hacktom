@@ -6,41 +6,41 @@ const supabase = createClient();
 // ─── Shape helpers ────────────────────────────────────────────────────────────
 
 interface RawFuel {
-  fuel_type:       string;
-  available:       boolean;
-  stock_liters:    number;
+  fuel_type: string;
+  available: boolean;
+  stock_liters: number;
   price_per_liter: number;
 }
 
 interface RawStation {
-  id:            string;
-  name:          string;
-  address:       string;
-  lat:           number;
-  lng:           number;
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
   working_hours: string | null;
-  image_url:     string | null;
-  is_active:     boolean;
+  image_url: string | null;
+  is_active: boolean;
   station_fuels?: RawFuel[];
   distance_meters?: number;
 }
 
 function toStation(raw: RawStation, distanceKm?: number): Station {
   const fuels: Fuel[] = (raw.station_fuels ?? []).map((f) => ({
-    type:              f.fuel_type as Fuel['type'],
-    available:         f.available,
+    type: f.fuel_type as Fuel['type'],
+    available: f.available,
     remainingQuantity: f.stock_liters,
-    pricePerLiter:     f.price_per_liter,
+    pricePerLiter: f.price_per_liter,
   }));
 
   return {
-    id:           raw.id,
-    name:         raw.name,
-    location:     { lat: raw.lat, lng: raw.lng, address: raw.address },
+    id: raw.id,
+    name: raw.name,
+    location: { lat: raw.lat, lng: raw.lng, address: raw.address },
     workingHours: raw.working_hours ?? '',
-    imageUrl:     raw.image_url ?? '',
+    imageUrl: raw.image_url ?? '',
     fuels,
-    distance:     distanceKm,
+    distance: distanceKm,
   };
 }
 
@@ -53,8 +53,8 @@ class StationService {
    */
   async getNearbyStations(lat: number, lng: number, radius = 10000): Promise<Station[]> {
     const { data, error } = await supabase.rpc('get_nearby_stations', {
-      user_lat:      lat,
-      user_lng:      lng,
+      user_lat: lat,
+      user_lng: lng,
       radius_meters: radius,
     });
 
@@ -74,10 +74,7 @@ class StationService {
     }
 
     return (data as (RawStation & { distance_meters: number })[]).map((s) =>
-      toStation(
-        { ...s, station_fuels: fuelsByStation[s.id] ?? [] },
-        s.distance_meters / 1000
-      )
+      toStation({ ...s, station_fuels: fuelsByStation[s.id] ?? [] }, s.distance_meters / 1000)
     );
   }
 

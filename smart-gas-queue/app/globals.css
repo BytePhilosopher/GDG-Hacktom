@@ -2,20 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Inter font via system stack — no network request needed */
+/*
+ * --font-sans / --font-mono are provided by next/font (Geist) on <html>.
+ * This fallback keeps text sane if the font variables ever fail to load.
+ */
 :root {
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', system-ui, sans-serif;
+  --font-sans-fallback:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow-x: hidden;
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-sans), var(--font-sans-fallback);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Premium text selection */
+::selection {
+  background: rgba(220, 38, 38, 0.14);
+  color: #7f1d1d;
 }
 
 /* Safe area for notched phones */
@@ -23,26 +35,60 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Thin scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+/* Refined scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
 
-/* Glassmorphism */
+/* Glassmorphism — layered, premium */
 .glass {
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Subtle brand gradient text (for hero accents) */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Focus ring */
 :focus-visible {
-  outline: 2px solid #DC2626;
+  outline: 2px solid #dc2626;
   outline-offset: 2px;
 }
 
 /* Remove number input spinners */
 input[type='number']::-webkit-inner-spin-button,
-input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type='number'] { -moz-appearance: textfield; }
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

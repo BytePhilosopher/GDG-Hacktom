@@ -17,10 +17,7 @@ export function createClient(): SupabaseClient {
     // During SSR/build without real env vars, return a no-op stub
     // so imports don't crash. Real calls will fail gracefully at runtime.
     if (typeof window === 'undefined') {
-      return createBrowserClient(
-        'https://placeholder.supabase.co',
-        'placeholder-anon-key'
-      );
+      return createBrowserClient('https://placeholder.supabase.co', 'placeholder-anon-key');
     }
     throw new Error(
       'Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'

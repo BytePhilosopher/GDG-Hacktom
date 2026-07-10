@@ -41,13 +41,13 @@ This is not just an inconvenience — it is a measurable drag on productivity an
 
 ## 🌍 Impact
 
-| Metric | Estimate |
-|---|---|
-| Average wait time saved per driver | 2–4 hours per visit |
-| Fuel saved (no idling in queue) | ~0.5–1L per visit |
+| Metric                              | Estimate                      |
+| ----------------------------------- | ----------------------------- |
+| Average wait time saved per driver  | 2–4 hours per visit           |
+| Fuel saved (no idling in queue)     | ~0.5–1L per visit             |
 | Economic value per driver per visit | 200–500 ETB in recovered time |
-| Stations manageable per deployment | Unlimited (multi-tenant) |
-| Scalability | City-wide → National |
+| Stations manageable per deployment  | Unlimited (multi-tenant)      |
+| Scalability                         | City-wide → National          |
 
 By digitizing the queue, FuelQ enables station operators to serve more drivers per day with less chaos, while drivers reclaim their time. At scale, this reduces urban congestion, lowers emissions from idling vehicles, and improves the daily lives of millions of Ethiopians.
 
@@ -55,19 +55,18 @@ By digitizing the queue, FuelQ enables station operators to serve more drivers p
 
 ## 🛠 Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Framework | Next.js 15 (App Router) | Full-stack React framework |
-| Language | TypeScript 5 | Type safety across frontend and backend |
-| Database | PostgreSQL | Primary relational data store |
-| ORM | Prisma | Type-safe database access and migrations |
-| Auth | JWT (HTTP-only cookies) | Stateless session management |
-| Payments | Chapa API | Ethiopian payment gateway |
-| Real-time | Socket.IO / WebSocket | Live queue position updates |
-| Maps | Google Maps API | Station discovery and geolocation |
-| Styling | Tailwind CSS + shadcn/ui | UI components and design system |
-| Deployment | Vercel + Supabase/Neon | Serverless hosting + managed Postgres |
-
+| Layer      | Technology               | Purpose                                  |
+| ---------- | ------------------------ | ---------------------------------------- |
+| Framework  | Next.js 15 (App Router)  | Full-stack React framework               |
+| Language   | TypeScript 5             | Type safety across frontend and backend  |
+| Database   | PostgreSQL               | Primary relational data store            |
+| ORM        | Prisma                   | Type-safe database access and migrations |
+| Auth       | JWT (HTTP-only cookies)  | Stateless session management             |
+| Payments   | Chapa API                | Ethiopian payment gateway                |
+| Real-time  | Socket.IO / WebSocket    | Live queue position updates              |
+| Maps       | Google Maps API          | Station discovery and geolocation        |
+| Styling    | Tailwind CSS + shadcn/ui | UI components and design system          |
+| Deployment | Vercel + Supabase/Neon   | Serverless hosting + managed Postgres    |
 
 ---
 
@@ -155,7 +154,6 @@ By digitizing the queue, FuelQ enables station operators to serve more drivers p
    → Total served today, revenue, average wait time
 ```
 
-
 ---
 
 ## 📡 API Reference
@@ -165,11 +163,13 @@ All routes are prefixed with `/api`. Protected routes require a valid JWT in an 
 ### Authentication
 
 #### `POST /api/auth/register`
+
 Register a new user account.
 
 **Auth:** None
 
 **Request body:**
+
 ```json
 {
   "fullName": "Abebe Kebede",
@@ -186,6 +186,7 @@ Register a new user account.
 ```
 
 **Response `201`:**
+
 ```json
 {
   "user": {
@@ -201,11 +202,13 @@ Register a new user account.
 ---
 
 #### `POST /api/auth/login`
+
 Authenticate and receive a session cookie.
 
 **Auth:** None
 
 **Request body:**
+
 ```json
 {
   "email": "abebe@example.com",
@@ -218,11 +221,13 @@ Authenticate and receive a session cookie.
 ---
 
 #### `GET /api/auth/me`
+
 Get the currently authenticated user.
 
 **Auth:** Required
 
 **Response `200`:**
+
 ```json
 {
   "id": "clx...",
@@ -240,6 +245,7 @@ Get the currently authenticated user.
 ---
 
 #### `POST /api/auth/logout`
+
 Clear the session cookie.
 
 **Auth:** Required
@@ -251,18 +257,21 @@ Clear the session cookie.
 ### Stations
 
 #### `GET /api/stations/nearby?lat={lat}&lng={lng}&radius={km}`
+
 Find stations within a given radius, sorted by distance.
 
 **Auth:** None
 
 **Query params:**
-| Param | Type | Required | Description |
-|---|---|---|---|
-| `lat` | number | ✅ | Driver latitude |
-| `lng` | number | ✅ | Driver longitude |
-| `radius` | number | ❌ | Search radius in km (default: 10) |
+
+| Param    | Type   | Required | Description                       |
+| -------- | ------ | -------- | --------------------------------- |
+| `lat`    | number | ✅       | Driver latitude                   |
+| `lng`    | number | ✅       | Driver longitude                  |
+| `radius` | number | ❌       | Search radius in km (default: 10) |
 
 **Response `200`:**
+
 ```json
 [
   {
@@ -271,7 +280,7 @@ Find stations within a given radius, sorted by distance.
     "location": { "lat": 9.0105, "lng": 38.7636, "address": "Bole, Addis Ababa" },
     "fuels": [
       { "type": "Benzene", "available": true, "pricePerLiter": 52.66, "remainingQuantity": 5000 },
-      { "type": "Diesel",  "available": true, "pricePerLiter": 49.50, "remainingQuantity": 3000 }
+      { "type": "Diesel", "available": true, "pricePerLiter": 49.5, "remainingQuantity": 3000 }
     ],
     "queueSize": 4,
     "distance": 1.2
@@ -282,6 +291,7 @@ Find stations within a given radius, sorted by distance.
 ---
 
 #### `GET /api/stations/[id]`
+
 Get full details for a single station.
 
 **Auth:** None
@@ -293,11 +303,13 @@ Get full details for a single station.
 ### Queue
 
 #### `POST /api/queue/join`
+
 Join the queue at a station for a specific fuel type.
 
 **Auth:** Required (driver)
 
 **Request body:**
+
 ```json
 {
   "stationId": "station-1",
@@ -307,12 +319,13 @@ Join the queue at a station for a specific fuel type.
 ```
 
 **Response `201`:**
+
 ```json
 {
   "queueId": "clx...",
   "position": 3,
   "estimatedWait": 21,
-  "totalPrice": 1579.80,
+  "totalPrice": 1579.8,
   "advancePayment": 394.95
 }
 ```
@@ -322,11 +335,13 @@ Join the queue at a station for a specific fuel type.
 ---
 
 #### `GET /api/queue/position/[queueId]`
+
 Poll the current position and status of a queue entry.
 
 **Auth:** Required
 
 **Response `200`:**
+
 ```json
 {
   "position": 2,
@@ -339,6 +354,7 @@ Poll the current position and status of a queue entry.
 ---
 
 #### `DELETE /api/queue/cancel/[queueId]`
+
 Cancel a queue entry. Triggers refund flow if payment was made.
 
 **Auth:** Required (owner of queue entry)
@@ -350,6 +366,7 @@ Cancel a queue entry. Triggers refund flow if payment was made.
 ### Driver
 
 #### `GET /api/driver/active-queue`
+
 Get the driver's current active queue entry, if any.
 
 **Auth:** Required (driver)
@@ -359,6 +376,7 @@ Get the driver's current active queue entry, if any.
 ---
 
 #### `GET /api/driver/history`
+
 Get the driver's completed and cancelled queue history.
 
 **Auth:** Required (driver)
@@ -370,11 +388,13 @@ Get the driver's completed and cancelled queue history.
 ### Payments
 
 #### `POST /api/payments/initialize`
+
 Initialize a Chapa payment for a queue entry.
 
 **Auth:** Required (driver)
 
 **Request body:**
+
 ```json
 {
   "stationId": "station-1",
@@ -386,6 +406,7 @@ Initialize a Chapa payment for a queue entry.
 ```
 
 **Response `200`:**
+
 ```json
 {
   "checkoutUrl": "https://checkout.chapa.co/checkout/payment/...",
@@ -396,11 +417,13 @@ Initialize a Chapa payment for a queue entry.
 ---
 
 #### `GET /api/payments/verify/[txRef]`
+
 Verify a payment after Chapa redirect. Updates queue status to `active` on success.
 
 **Auth:** Required
 
 **Response `200`:**
+
 ```json
 {
   "status": "success",
@@ -413,6 +436,7 @@ Verify a payment after Chapa redirect. Updates queue status to `active` on succe
 ---
 
 #### `POST /api/payments/webhook`
+
 Chapa webhook endpoint. Verifies HMAC signature and processes payment events idempotently.
 
 **Auth:** HMAC signature via `x-chapa-signature` header (not JWT)
@@ -429,16 +453,15 @@ Chapa webhook endpoint. Verifies HMAC signature and processes payment events ide
 
 All admin routes require `role: station_admin` and the user must be associated with the station.
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/admin/queue` | List all active queue entries for the station |
-| `GET` | `/api/admin/queue/[id]` | Get a single queue entry detail |
-| `POST` | `/api/admin/queue/[id]/complete` | Mark a queue entry as completed |
-| `POST` | `/api/admin/queue/[id]/skip` | Skip a driver (moves them to end of queue) |
-| `GET` | `/api/admin/fuels` | Get fuel inventory for the station |
-| `PATCH` | `/api/admin/fuels/[fuelType]` | Update fuel availability, quantity, or price |
-| `GET` | `/api/admin/stats` | Get station statistics (served today, revenue, avg wait) |
-
+| Method  | Path                             | Description                                              |
+| ------- | -------------------------------- | -------------------------------------------------------- |
+| `GET`   | `/api/admin/queue`               | List all active queue entries for the station            |
+| `GET`   | `/api/admin/queue/[id]`          | Get a single queue entry detail                          |
+| `POST`  | `/api/admin/queue/[id]/complete` | Mark a queue entry as completed                          |
+| `POST`  | `/api/admin/queue/[id]/skip`     | Skip a driver (moves them to end of queue)               |
+| `GET`   | `/api/admin/fuels`               | Get fuel inventory for the station                       |
+| `PATCH` | `/api/admin/fuels/[fuelType]`    | Update fuel availability, quantity, or price             |
+| `GET`   | `/api/admin/stats`               | Get station statistics (served today, revenue, avg wait) |
 
 ---
 
@@ -650,14 +673,13 @@ model Payment {
 
 The following stations are pre-seeded via `prisma/seed.ts` for development and demo:
 
-| ID | Name | Coordinates | Fuels |
-|---|---|---|---|
-| `station-1` | Total Bole | 9.0105, 38.7636 | Benzene 52.66 ETB/L, Diesel 49.50 ETB/L |
-| `station-2` | NOC Kazanchis | 9.0227, 38.7614 | Benzene 52.66, Kerosene 38.00 (Diesel unavailable) |
-| `station-3` | Oilibya Megenagna | 9.0348, 38.7714 | Benzene 52.66, Diesel 49.50 |
-| `station-4` | Total Piassa | 9.0348, 38.7469 | Diesel 49.50, Kerosene 38.00 (Benzene unavailable) |
-| `station-5` | Kobil CMC | 9.0456, 38.8012 | Benzene 52.66, Diesel 49.50 |
-
+| ID          | Name              | Coordinates     | Fuels                                              |
+| ----------- | ----------------- | --------------- | -------------------------------------------------- |
+| `station-1` | Total Bole        | 9.0105, 38.7636 | Benzene 52.66 ETB/L, Diesel 49.50 ETB/L            |
+| `station-2` | NOC Kazanchis     | 9.0227, 38.7614 | Benzene 52.66, Kerosene 38.00 (Diesel unavailable) |
+| `station-3` | Oilibya Megenagna | 9.0348, 38.7714 | Benzene 52.66, Diesel 49.50                        |
+| `station-4` | Total Piassa      | 9.0348, 38.7469 | Diesel 49.50, Kerosene 38.00 (Benzene unavailable) |
+| `station-5` | Kobil CMC         | 9.0456, 38.8012 | Benzene 52.66, Diesel 49.50                        |
 
 ---
 
@@ -690,17 +712,17 @@ NEXT_PUBLIC_GOOGLE_MAPS_KEY=AIza...
 NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_APP_URL` | ✅ | Base URL of the app (used for Chapa callback URLs) |
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `JWT_SECRET` | ✅ | Secret for signing JWT tokens (min 32 chars) |
-| `JWT_EXPIRES_IN` | ✅ | Token expiry duration (e.g. `7d`, `24h`) |
-| `NEXT_PUBLIC_CHAPA_PUBLIC_KEY` | ✅ | Chapa public key (safe to expose to browser) |
-| `CHAPA_SECRET_KEY` | ✅ | Chapa secret key (server-side only) |
-| `CHAPA_WEBHOOK_SECRET` | ✅ | Used to verify HMAC signature on webhook events |
-| `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | ✅ | Google Maps API key for map rendering |
-| `NEXT_PUBLIC_SOCKET_URL` | ✅ | WebSocket server URL for real-time updates |
+| Variable                       | Required | Description                                        |
+| ------------------------------ | -------- | -------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`          | ✅       | Base URL of the app (used for Chapa callback URLs) |
+| `DATABASE_URL`                 | ✅       | PostgreSQL connection string                       |
+| `JWT_SECRET`                   | ✅       | Secret for signing JWT tokens (min 32 chars)       |
+| `JWT_EXPIRES_IN`               | ✅       | Token expiry duration (e.g. `7d`, `24h`)           |
+| `NEXT_PUBLIC_CHAPA_PUBLIC_KEY` | ✅       | Chapa public key (safe to expose to browser)       |
+| `CHAPA_SECRET_KEY`             | ✅       | Chapa secret key (server-side only)                |
+| `CHAPA_WEBHOOK_SECRET`         | ✅       | Used to verify HMAC signature on webhook events    |
+| `NEXT_PUBLIC_GOOGLE_MAPS_KEY`  | ✅       | Google Maps API key for map rendering              |
+| `NEXT_PUBLIC_SOCKET_URL`       | ✅       | WebSocket server URL for real-time updates         |
 
 ---
 
@@ -760,17 +782,17 @@ npx prisma studio
 
 After seeding, the following accounts are available:
 
-| Role | Email | Password |
-|---|---|---|
-| Driver | `bet30539@gmail.com` | `12345678` |
+| Role          | Email                    | Password   |
+| ------------- | ------------------------ | ---------- |
+| Driver        | `bet30539@gmail.com`     | `12345678` |
 | Station Admin | `admin@totalstation.com` | `admin123` |
 
 ### Chapa test payment
 
 When redirected to Chapa checkout in test mode:
+
 - **Phone:** `0900123456`
 - **PIN:** `12345`
-
 
 ---
 
@@ -864,7 +886,6 @@ smart-gas-queue/
 └── package.json
 ```
 
-
 ---
 
 ## 💳 Payment Flow Diagram
@@ -905,14 +926,14 @@ Driver App                    FuelQ Backend                  Chapa API
 
 ### Business Rules
 
-| Rule | Value |
-|---|---|
-| Advance payment | 25% of `liters × pricePerLiter` |
-| Estimated wait time | `position × 7 minutes` |
-| Max active queues per driver | 1 |
-| Queue expiry (unpaid) | 15 minutes (production) |
-| Webhook deduplication | Idempotent — duplicate events ignored |
-| Currency | ETB (Ethiopian Birr) |
+| Rule                         | Value                                 |
+| ---------------------------- | ------------------------------------- |
+| Advance payment              | 25% of `liters × pricePerLiter`       |
+| Estimated wait time          | `position × 7 minutes`                |
+| Max active queues per driver | 1                                     |
+| Queue expiry (unpaid)        | 15 minutes (production)               |
+| Webhook deduplication        | Idempotent — duplicate events ignored |
+| Currency                     | ETB (Ethiopian Birr)                  |
 
 ---
 
@@ -923,45 +944,44 @@ The WebSocket server (Socket.IO) enables real-time queue updates without polling
 ### Connection
 
 ```typescript
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client';
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-  auth: { token: "your-jwt-token" }
+  auth: { token: 'your-jwt-token' },
 });
 ```
 
 ### Events — Client → Server
 
-| Event | Payload | Description |
-|---|---|---|
-| `queue:subscribe` | `{ queueId: string }` | Subscribe to updates for a specific queue entry |
-| `queue:unsubscribe` | `{ queueId: string }` | Unsubscribe from a queue entry |
+| Event               | Payload                 | Description                                     |
+| ------------------- | ----------------------- | ----------------------------------------------- |
+| `queue:subscribe`   | `{ queueId: string }`   | Subscribe to updates for a specific queue entry |
+| `queue:unsubscribe` | `{ queueId: string }`   | Unsubscribe from a queue entry                  |
 | `station:subscribe` | `{ stationId: string }` | Subscribe to station-wide queue updates (admin) |
 
 ### Events — Server → Client
 
-| Event | Payload | Description |
-|---|---|---|
-| `queue:position_update` | `{ queueId, position, estimatedWait }` | Fired when the driver's position changes |
-| `queue:status_change` | `{ queueId, status, paymentStatus }` | Fired on any status transition |
-| `queue:your_turn` | `{ queueId, stationName }` | Fired when driver reaches position 1 |
-| `station:queue_update` | `{ stationId, activeCount }` | Fired when station queue size changes (admin) |
-| `error` | `{ message: string }` | Authentication or subscription error |
+| Event                   | Payload                                | Description                                   |
+| ----------------------- | -------------------------------------- | --------------------------------------------- |
+| `queue:position_update` | `{ queueId, position, estimatedWait }` | Fired when the driver's position changes      |
+| `queue:status_change`   | `{ queueId, status, paymentStatus }`   | Fired on any status transition                |
+| `queue:your_turn`       | `{ queueId, stationName }`             | Fired when driver reaches position 1          |
+| `station:queue_update`  | `{ stationId, activeCount }`           | Fired when station queue size changes (admin) |
+| `error`                 | `{ message: string }`                  | Authentication or subscription error          |
 
 ### Example — Driver listening for position updates
 
 ```typescript
-socket.emit("queue:subscribe", { queueId });
+socket.emit('queue:subscribe', { queueId });
 
-socket.on("queue:position_update", ({ position, estimatedWait }) => {
+socket.on('queue:position_update', ({ position, estimatedWait }) => {
   console.log(`Position: ${position}, ~${estimatedWait} min wait`);
 });
 
-socket.on("queue:your_turn", () => {
+socket.on('queue:your_turn', () => {
   showNotification("It's your turn! Head to the station now.");
 });
 ```
-
 
 ---
 
@@ -969,12 +989,12 @@ socket.on("queue:your_turn", () => {
 
 ### Recommended stack
 
-| Service | Provider | Notes |
-|---|---|---|
-| App hosting | [Vercel](https://vercel.com) | Zero-config Next.js deployment |
-| Database | [Neon](https://neon.tech) or [Supabase](https://supabase.com) | Managed PostgreSQL with connection pooling |
-| WebSocket server | [Railway](https://railway.app) or [Render](https://render.com) | Persistent Node.js process for Socket.IO |
-| File storage | [Cloudinary](https://cloudinary.com) | Station images |
+| Service          | Provider                                                       | Notes                                      |
+| ---------------- | -------------------------------------------------------------- | ------------------------------------------ |
+| App hosting      | [Vercel](https://vercel.com)                                   | Zero-config Next.js deployment             |
+| Database         | [Neon](https://neon.tech) or [Supabase](https://supabase.com)  | Managed PostgreSQL with connection pooling |
+| WebSocket server | [Railway](https://railway.app) or [Render](https://render.com) | Persistent Node.js process for Socket.IO   |
+| File storage     | [Cloudinary](https://cloudinary.com)                           | Station images                             |
 
 ### Deploy to Vercel
 

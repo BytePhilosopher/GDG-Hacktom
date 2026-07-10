@@ -1,5 +1,5 @@
 import { Queue, QueueRequest } from '@/types';
-import { createClient } from '@/lib/supabase/client';
+import { toQueue } from '@/lib/mappers';
 
 /**
  * All mutating operations (join, cancel) go through the API routes so the
@@ -9,27 +9,6 @@ import { createClient } from '@/lib/supabase/client';
  * directly — RLS allows drivers to read their own rows.
  */
 
- 
-function toQueue(raw: any): Queue {
-  return {
-    id:             raw.id,
-    driverId:       raw.driver_id ?? raw.driverId,
-    stationId:      raw.station_id ?? raw.stationId,
-    stationName:    raw.stations?.name ?? raw.stationName,
-    fuelType:       raw.fuel_type ?? raw.fuelType,
-    liters:         raw.liters,
-    totalPrice:     raw.total_price ?? raw.totalPrice,
-    advancePayment: raw.advance_payment ?? raw.advancePayment,
-    paidAmount:     raw.paid_amount ?? raw.paidAmount,
-    position:       raw.position,
-    estimatedWait:  raw.estimated_wait ?? raw.estimatedWait,
-    status:         raw.status,
-    paymentStatus:  raw.payment_status ?? raw.paymentStatus,
-    createdAt:      raw.created_at ?? raw.createdAt,
-    updatedAt:      raw.updated_at ?? raw.updatedAt,
-  };
-}
-
 class QueueService {
   /**
    * Join a station queue.
@@ -37,13 +16,13 @@ class QueueService {
    */
   async joinQueue(data: QueueRequest): Promise<Queue> {
     const res = await fetch('/api/queue/join', {
-      method:      'POST',
+      method: 'POST',
       credentials: 'include',
-      headers:     { 'Content-Type': 'application/json' },
-      body:        JSON.stringify({
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         stationId: data.stationId,
-        fuelType:  data.fuelType,
-        liters:    data.liters,
+        fuelType: data.fuelType,
+        liters: data.liters,
       }),
     });
 
@@ -78,7 +57,7 @@ class QueueService {
    */
   async cancelQueue(queueId: string): Promise<void> {
     const res = await fetch(`/api/queue/cancel/${queueId}`, {
-      method:      'DELETE',
+      method: 'DELETE',
       credentials: 'include',
     });
     const json = await res.json();
@@ -110,9 +89,3 @@ class QueueService {
 }
 
 export const queueService = new QueueService();
-
-// ── Supabase Realtime helper (used by useQueuePosition hook) ──────────────────
-// Keep the direct Supabase client for real-time subscriptions only.
-export function getSupabaseClient() {
-  return createClient();
-}

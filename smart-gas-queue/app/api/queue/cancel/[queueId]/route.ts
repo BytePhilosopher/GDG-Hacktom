@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { adminClient } from '@/lib/supabase/admin';
 import { checkSupabase } from '@/lib/supabase/guard';
+import { serverError } from '@/lib/apiResponse';
 
 export async function DELETE(
   _req: NextRequest,
@@ -12,7 +13,10 @@ export async function DELETE(
   try {
     const { queueId } = await params;
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -42,15 +46,15 @@ export async function DELETE(
       .eq('id', queueId);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      return serverError('queue/cancel', updateError);
     }
 
     // Audit log
     await adminClient.from('queue_history').insert({
-      queue_id:   queueId,
+      queue_id: queueId,
       station_id: queue.station_id,
-      driver_id:  user.id,
-      action:     'cancelled',
+      driver_id: user.id,
+      action: 'cancelled',
     });
 
     return NextResponse.json({ success: true, status: 'cancelled' });

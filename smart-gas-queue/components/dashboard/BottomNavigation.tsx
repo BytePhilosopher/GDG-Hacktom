@@ -18,10 +18,10 @@ export function BottomNavigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-gray-200 safe-area-pb"
+      className="safe-area-pb glass fixed bottom-0 left-0 right-0 z-30 border-t border-gray-950/[0.06]"
       aria-label="Main navigation"
     >
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
           return (
@@ -29,15 +29,22 @@ export function BottomNavigation() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all min-w-[60px]',
-                isActive
-                  ? 'text-red-600'
-                  : 'text-gray-400 hover:text-gray-600'
+                'group relative flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all duration-200 ease-premium',
+                isActive ? 'text-red-600' : 'text-gray-500 hover:text-gray-900'
               )}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className={cn('w-5 h-5', isActive && 'stroke-[2.5]')} />
-              <span className={cn('text-xs font-medium', isActive && 'font-semibold')}>
+              <span
+                className={cn(
+                  'flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 ease-premium',
+                  isActive
+                    ? 'bg-red-50 ring-1 ring-inset ring-red-600/15'
+                    : 'group-hover:bg-gray-900/5'
+                )}
+              >
+                <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} aria-hidden />
+              </span>
+              <span className={cn('text-[11px] font-medium', isActive && 'font-semibold')}>
                 {label}
               </span>
             </Link>

@@ -4,16 +4,10 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 function AdminLoadingScreen() {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-gray-500">Loading admin panel...</p>
-      </div>
-    </div>
-  );
+  return <LoadingSpinner fullScreen text="Loading admin panel..." />;
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,11 +17,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.push('/login');        // not logged in → driver login page
+      router.push('/login'); // not logged in → driver login page
       return;
     }
     if (user.role !== 'station_admin') {
-      router.push('/');             // logged in as driver → map page
+      router.push('/'); // logged in as driver → map page
     }
   }, [user, loading, router]);
 
@@ -36,12 +30,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <AdminSidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="relative flex-1 overflow-y-auto">
+        {/* Subtle brand wash for depth */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary-50/40 to-transparent"
+          aria-hidden
+        />
         {/* Spacer for mobile top bar */}
         <div className="h-14 lg:hidden" />
-        <div className="p-4 md:p-6 max-w-6xl mx-auto">{children}</div>
+        <div className="relative mx-auto max-w-6xl p-4 md:p-6">{children}</div>
       </main>
     </div>
   );

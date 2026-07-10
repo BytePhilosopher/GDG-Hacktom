@@ -3,9 +3,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  CheckCircle, Bell, X, ArrowLeft, Share2, AlertCircle, RefreshCw,
-} from 'lucide-react';
+import { CheckCircle, Bell, X, ArrowLeft, Share2, AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { QueuePositionCard } from '@/components/queue/QueuePositionCard';
@@ -14,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useQueuePosition } from '@/hooks/useQueuePosition';
 import { queueService } from '@/services/queueService';
 import { paymentService } from '@/services/paymentService';
+import { shareOrCopy } from '@/lib/share';
 import Link from 'next/link';
 
 export default function QueuePositionPage({ params }: { params: Promise<{ queueId: string }> }) {
@@ -34,24 +33,37 @@ function QueuePositionPageInner({ params }: { params: Promise<{ queueId: string 
 type VerifyState = 'idle' | 'verifying' | 'success' | 'failed';
 
 function QueuePositionContent({ queueId }: { queueId: string }) {
-  const router       = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
   // Chapa sends trx_ref in return_url; we also accept tx_ref
   const txRef = searchParams.get('trx_ref') ?? searchParams.get('tx_ref');
 
   const { queue, loading: queueLoading } = useQueuePosition(queueId);
-  const [verifyState, setVerifyState]   = useState<VerifyState>(txRef ? 'verifying' : 'idle');
-  const [verifyError, setVerifyError]   = useState('');
-  const [cancelling, setCancelling]     = useState(false);
-  const [showCancel, setShowCancel]     = useState(false);
-  const [notifyOn, setNotifyOn]         = useState(false);
+  const [verifyState, setVerifyState] = useState<VerifyState>(txRef ? 'verifying' : 'idle');
+  const [verifyError, setVerifyError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
+  const [notifyOn, setNotifyOn] = useState(false);
   const hasVerified = useRef(false);
 
   useEffect(() => {
     if (!txRef || hasVerified.current) return;
     hasVerified.current = true;
     runVerify(txRef);
-  }, [txRef]);  
+  }, [txRef]);
+
+  // Source of truth: the queue row itself (kept live via Supabase Realtime).
+  // If the queue is paid — e.g. the webhook credited it, or the browser-side
+  // verify used a stale tx_ref — surface success instead of a false failure.
+  const queuePaid = queue?.paymentStatus === 'paid';
+  useEffect(() => {
+    if (!queuePaid) return;
+    sessionStorage.removeItem('pending_tx_ref');
+    sessionStorage.removeItem('pending_queue_id');
+    if (txRef) {
+      setVerifyState((s) => (s === 'failed' || s === 'verifying' ? 'success' : s));
+    }
+  }, [queuePaid, txRef]);
 
   async function runVerify(ref: string) {
     setVerifyState('verifying');
@@ -63,9 +75,7 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
         toast.success('Payment confirmed! You are in the queue.');
       } else {
         setVerifyState('failed');
-        setVerifyError(
-          result.message ?? 'Payment was not completed. Please try again.'
-        );
+        setVerifyError(result.message ?? 'Payment was not completed. Please try again.');
       }
     } catch {
       setVerifyState('failed');
@@ -103,8 +113,8 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
   // ── Verifying ────────────────────────────────────────────────────────────
   if (verifyState === 'verifying') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 p-6">
-        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 p-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
           <LoadingSpinner size="md" />
         </div>
         <p className="font-semibold text-gray-900">Verifying your payment…</p>
@@ -116,18 +126,18 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
   // ── Failed ───────────────────────────────────────────────────────────────
   if (verifyState === 'failed') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-5 p-6 max-w-sm mx-auto">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-          <AlertCircle className="w-8 h-8 text-red-600" />
+      <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-5 bg-gray-50 p-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <AlertCircle className="h-8 w-8 text-red-600" />
         </div>
         <div className="text-center">
           <h2 className="text-lg font-bold text-gray-900">Payment Not Confirmed</h2>
-          <p className="text-sm text-gray-500 mt-2 leading-relaxed">{verifyError}</p>
+          <p className="mt-2 text-sm leading-relaxed text-gray-500">{verifyError}</p>
         </div>
         <div className="w-full space-y-3">
           {txRef && (
             <Button className="w-full" onClick={() => runVerify(txRef)}>
-              <RefreshCw className="w-4 h-4" /> Retry Verification
+              <RefreshCw className="h-4 w-4" /> Retry Verification
             </Button>
           )}
           <Button variant="secondary" className="w-full" onClick={() => router.push('/')}>
@@ -143,10 +153,10 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
 
   if (!queue) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 text-center">
+      <div className="flex min-h-screen items-center justify-center p-4 text-center">
         <div>
           <p className="text-gray-500">Queue not found</p>
-          <Link href="/dashboard" className="mt-4 text-red-600 font-medium hover:underline block">
+          <Link href="/dashboard" className="mt-4 block font-medium text-red-600 hover:underline">
             Back to dashboard
           </Link>
         </div>
@@ -157,32 +167,38 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
   // ── Main view ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/dashboard" className="p-2 rounded-full hover:bg-gray-100 -ml-2" aria-label="Back">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+        <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+          <Link
+            href="/dashboard"
+            className="-ml-2 rounded-full p-2 hover:bg-gray-100"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
           </Link>
           <h1 className="font-semibold text-gray-900">Queue Status</h1>
           <button
-            className="p-2 rounded-full hover:bg-gray-100"
-            onClick={() => navigator.share?.({ title: 'My Queue Position', url: window.location.href })}
+            className="rounded-full p-2 hover:bg-gray-100"
+            onClick={() =>
+              void shareOrCopy({ title: 'My Queue Position', url: window.location.href })
+            }
             aria-label="Share"
           >
-            <Share2 className="w-5 h-5 text-gray-600" />
+            <Share2 className="h-5 w-5 text-gray-600" />
           </button>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
         <AnimatePresence>
           {verifyState === 'success' && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-3"
+              className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"
             >
-              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
               <div>
                 <p className="text-sm font-semibold text-emerald-800">Payment Confirmed!</p>
                 <p className="text-xs text-emerald-600">You&apos;ve been added to the queue</p>
@@ -200,20 +216,20 @@ function QueuePositionContent({ queueId }: { queueId: string }) {
             onClick={handleNotify}
             disabled={notifyOn}
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="h-4 w-4" />
             {notifyOn ? 'Notifications Enabled ✓' : 'Notify Me When Close'}
           </Button>
 
           {!showCancel ? (
             <Button variant="danger" className="w-full" onClick={() => setShowCancel(true)}>
-              <X className="w-4 h-4" /> Cancel Queue Request
+              <X className="h-4 w-4" /> Cancel Queue Request
             </Button>
           ) : (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
-              <p className="text-sm font-medium text-red-800 text-center">
+            <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-center text-sm font-medium text-red-800">
                 Are you sure you want to cancel?
               </p>
-              <p className="text-xs text-red-600 text-center">
+              <p className="text-center text-xs text-red-600">
                 Your advance payment may not be refunded immediately.
               </p>
               <div className="flex gap-3">

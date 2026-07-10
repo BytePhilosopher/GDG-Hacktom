@@ -22,11 +22,12 @@ export function AdminHeader() {
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-bold text-gray-900">
-        {getGreeting()}, {user?.fullName?.split(' ')[0] ?? 'Admin'} 👋
+      <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        {getGreeting()}, {user?.fullName?.split(' ')[0] ?? 'Admin'}
       </h1>
-      <p className="text-sm text-gray-500 mt-0.5">
-        {formatDate()} — {user?.stationName ?? 'Station'}
+      <p className="mt-1 text-sm leading-relaxed text-gray-500">
+        {formatDate()} <span className="text-gray-300">·</span>{' '}
+        <span className="font-medium text-gray-600">{user?.stationName ?? 'Station'}</span>
       </p>
     </div>
   );

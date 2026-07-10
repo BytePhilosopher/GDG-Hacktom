@@ -1,17 +1,11 @@
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  stationId: string;
-  stationName: string;
-}
+import type { FuelType } from './index';
 
 export interface QueueEntry {
   id: string;
   position: number;
   driverName: string;
   plateNumber: string;
-  fuelType: 'Benzene' | 'Diesel' | 'Kerosene';
+  fuelType: FuelType;
   liters: number;
   totalPrice: number;
   advancePaid: number;
@@ -20,7 +14,7 @@ export interface QueueEntry {
 }
 
 export interface AdminFuel {
-  type: 'Benzene' | 'Diesel' | 'Kerosene';
+  type: FuelType;
   available: boolean;
   stockLiters: number;
   pricePerLiter: number;

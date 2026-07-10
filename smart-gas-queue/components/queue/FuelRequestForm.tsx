@@ -4,31 +4,45 @@ import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Fuel } from '@/types';
+import { CreditCard } from 'lucide-react';
+import { Fuel, FuelType } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { PriceBreakdown } from '@/components/queue/PriceBreakdown';
 
 const schema = z.object({
-  fuelType: z.string().min(1, 'Please select a fuel type'),
-  liters:   z.number().min(1, 'Minimum 1 liter').max(200, 'Maximum 200 liters'),
+  fuelType: z.enum(['Benzene', 'Diesel', 'Kerosene'], {
+    message: 'Please select a fuel type',
+  }),
+  liters: z.number().min(1, 'Minimum 1 liter').max(200, 'Maximum 200 liters'),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface FuelRequestFormProps {
-  fuels:      Fuel[];
-  onSubmit:   (data: { fuelType: string; liters: number; totalPrice: number; advancePayment: number }) => void;
+  fuels: Fuel[];
+  onSubmit: (data: {
+    fuelType: FuelType;
+    liters: number;
+    totalPrice: number;
+    advancePayment: number;
+  }) => void;
   isLoading?: boolean;
 }
 
 export function FuelRequestForm({ fuels, onSubmit, isLoading }: FuelRequestFormProps) {
   const available = fuels.filter((f) => f.available);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { fuelType: available[0]?.type ?? '', liters: undefined },
+    defaultValues: { fuelType: available[0]?.type, liters: undefined },
   });
 
   const { fuelType, liters } = watch();
@@ -36,21 +50,28 @@ export function FuelRequestForm({ fuels, onSubmit, isLoading }: FuelRequestFormP
   const calc = useMemo(() => {
     const fuel = fuels.find((f) => f.type === fuelType);
     if (!fuel || !liters || liters <= 0) return null;
-    const totalPrice     = fuel.pricePerLiter * liters;
+    const totalPrice = fuel.pricePerLiter * liters;
     const advancePayment = Math.round(totalPrice * 0.25 * 100) / 100;
     return { totalPrice, advancePayment, pricePerLiter: fuel.pricePerLiter };
   }, [fuelType, liters, fuels]);
 
   const handleFormSubmit = (data: FormValues) => {
     if (!calc) return;
-    onSubmit({ fuelType: data.fuelType, liters: data.liters,
-               totalPrice: calc.totalPrice, advancePayment: calc.advancePayment });
+    onSubmit({
+      fuelType: data.fuelType,
+      liters: data.liters,
+      totalPrice: calc.totalPrice,
+      advancePayment: calc.advancePayment,
+    });
   };
 
   return (
-    <Card className="mx-4 mt-4 mb-8">
+    <Card className="mx-4 mb-8 mt-4">
       <CardHeader>
-        <h2 className="text-base font-semibold text-gray-900">Your Fuel Request</h2>
+        <h2 className="text-base font-bold tracking-tight text-gray-900">Your Fuel Request</h2>
+        <p className="mt-0.5 text-sm leading-relaxed text-gray-500">
+          Reserve your spot with a small advance — pay the rest at the pump.
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
@@ -86,24 +107,23 @@ export function FuelRequestForm({ fuels, onSubmit, isLoading }: FuelRequestFormP
             />
           )}
 
-          <button
+          <Button
             type="submit"
-            disabled={!calc || isLoading}
-            className="w-full h-14 flex items-center justify-center gap-2 rounded-xl text-white text-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-            style={{ backgroundColor: '#2ECC71' }}
+            variant="chapa"
+            size="lg"
+            className="w-full"
+            disabled={!calc}
+            isLoading={isLoading}
           >
             {isLoading ? (
-              <>
-                <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Connecting to Chapa…
-              </>
+              'Connecting to Chapa…'
             ) : (
               <>
-                <span>💳</span>
+                <CreditCard className="h-5 w-5" aria-hidden />
                 Pay {calc ? `${calc.advancePayment.toLocaleString('en-ET')} ETB` : ''} via Chapa
               </>
             )}
-          </button>
+          </Button>
         </form>
       </CardContent>
     </Card>

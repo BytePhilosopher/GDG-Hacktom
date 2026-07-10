@@ -17,7 +17,7 @@ export const AuthContext = createContext<AuthContextType>(null!);
 const supabase = createClient();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]       = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   // ── Restore session on mount & listen for auth changes ───────────────────
@@ -32,25 +32,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Subscribe to auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await fetchProfile();
-          setUser(profile);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await fetchProfile();
+        setUser(profile);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
-  }, []);  
+  }, []);
 
   async function fetchProfile(): Promise<User | null> {
     try {
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (!res.ok) return null;
-      return await res.json() as User;
+      return (await res.json()) as User;
     } catch {
       return null;
     }
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(credentials: LoginCredentials): Promise<User> {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email:    credentials.email,
+      email: credentials.email,
       password: credentials.password,
     });
 
@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function register(data: RegisterInput): Promise<void> {
     const res = await fetch('/api/auth/register', {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(data),
+      body: JSON.stringify(data),
     });
 
     const json = await res.json();

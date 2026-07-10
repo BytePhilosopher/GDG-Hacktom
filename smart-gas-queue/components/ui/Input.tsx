@@ -11,21 +11,19 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, icon, hint, id, ...props }, ref) => {
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
 
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1.5"
-          >
+          <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-gray-700">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
               {icon}
             </div>
           )}
@@ -33,11 +31,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full h-12 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400',
-              'focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all',
+              'h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-gray-900 shadow-[inset_0_1px_2px_rgba(16,24,40,0.04)] placeholder:text-gray-400',
+              'outline-none transition-all duration-200 ease-premium focus:border-red-400 focus:ring-4 focus:ring-red-500/10',
               'disabled:bg-gray-50 disabled:text-gray-500',
               icon && 'pl-11',
-              error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
+              error && 'border-red-400 focus:border-red-400 focus:ring-red-500/15',
               className
             )}
             aria-invalid={!!error}

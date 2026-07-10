@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -8,8 +9,6 @@ const nextConfig = {
       },
     ],
   },
-  // Allow @react-google-maps/api to work
-  transpilePackages: [],
 };
 
 export default nextConfig;

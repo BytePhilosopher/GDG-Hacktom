@@ -2,10 +2,10 @@ import { ChapaInitResponse, ChapaVerifyResponse } from '@/types';
 
 export interface PaymentInitPayload {
   stationId: string;
-  queueId:   string;
-  fuelType:  string;
-  liters:    number;
-  amount:    number;
+  queueId: string;
+  fuelType: string;
+  liters: number;
+  amount: number;
 }
 
 class PaymentService {
@@ -15,10 +15,10 @@ class PaymentService {
    */
   async initializePayment(payload: PaymentInitPayload): Promise<ChapaInitResponse> {
     const res = await fetch('/api/payments/initialize', {
-      method:      'POST',
+      method: 'POST',
       credentials: 'include',
-      headers:     { 'Content-Type': 'application/json' },
-      body:        JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -33,10 +33,9 @@ class PaymentService {
    * Uses fetch with credentials so the Supabase session cookie is sent.
    */
   async verifyPayment(txRef: string): Promise<ChapaVerifyResponse> {
-    const res = await fetch(
-      `/api/payments/verify/${encodeURIComponent(txRef)}`,
-      { credentials: 'include' }
-    );
+    const res = await fetch(`/api/payments/verify/${encodeURIComponent(txRef)}`, {
+      credentials: 'include',
+    });
 
     const data = await res.json();
     if (!res.ok && res.status !== 404) {
